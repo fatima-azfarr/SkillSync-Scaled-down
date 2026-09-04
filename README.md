@@ -17,8 +17,6 @@ SkillSync aggregates internship and tech event listings from **6 platforms**, cl
 | Wuzzuf.net | BeautifulSoup | Internships (Middle East) |
 
 ### Architecture
-
-```
 APScheduler (12-hour cycle)
          │
     ┌────┼────┬────┬────┬────┐
@@ -32,7 +30,30 @@ APScheduler (12-hour cycle)
              MongoDB
                  ▼
     FastAPI (REST API + Swagger docs)
+
+---
+
+## Quick Start (Docker)
+
+**Prerequisites:** Docker and Docker Compose installed.
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-username/SkillSync.git
+cd SkillSync
+
+# 2. Create your .env file
+cp .env.example .env
+
+# 3. Start all services
+docker-compose up
+
+# 4. Open Swagger UI in your browser
+# http://localhost:8000/docs
 ```
+
+That's it! MongoDB, the API, and the scrapers all start automatically.
+
 
 ---
 
@@ -61,26 +82,44 @@ That's it! MongoDB, the API, and the scrapers all start automatically.
 
 ## Quick Start (Local Development)
 
-**Prerequisites:** Python 3.11+, MongoDB running locally, Google Chrome installed.
+**Prerequisites:** Python 3.11 (newer versions like 3.13/3.14 currently fail to build `lxml` and `pydantic-core` — no compatible wheels yet), MongoDB installed locally, Google Chrome installed.
 
 ```bash
 # 1. Create virtual environment
-python -m venv venv
-venv\Scripts\activate      # Windows
-# source venv/bin/activate  # Linux/Mac
+python3.11 -m venv venv
+source venv/bin/activate     # Mac/Linux
+venv\Scripts\activate        # Windows
 
 # 2. Install dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
 
 # 3. Create your .env file
 cp .env.example .env
-# Edit .env with your MongoDB URI if not using default
+# Edit .env with your MongoDB URI — for local MongoDB (not Docker), use:
+# MONGODB_URI=mongodb://localhost:27017
 
-# 4. Start the API server
+# 4. Start MongoDB if it isn't already running
+mongod --dbpath ~/data/db
+# Leave this running in its own terminal
+
+# 5. Start the API server (in a new terminal)
+source venv/bin/activate
 uvicorn api.main:app --reload
+# Runs at http://127.0.0.1:8000
 
-# 5. In a separate terminal, start the scrapers
+# 6. Start the scrapers (in a separate terminal)
+source venv/bin/activate
 python -m scrapers.main
+# If Selenium scrapers (wuzzuf, rozee, internee, devpost) fail with a
+# chromedriver "Exec format error", clear the driver cache and retry:
+#   rm -rf ~/.wdm
+#   python -m scrapers.main
+
+# 7. Serve the frontend (in a separate terminal)
+cd frontend
+python3 -m http.server 5500
+# Open http://localhost:5500 in your browser
 ```
 
 ---
@@ -131,7 +170,7 @@ curl http://localhost:8000/health
 
 | Variable | Default | Description |
 |---|---|---|
-| `MONGO_URI` | `mongodb://localhost:27017` | MongoDB connection string |
+| `MONGODB_URI` | `mongodb://localhost:27017` | MongoDB connection string |
 | `DATABASE_NAME` | `skillsync` | MongoDB database name |
 | `SCRAPE_INTERVAL_HOURS` | `12` | Hours between scrape cycles |
 | `LOG_LEVEL` | `INFO` | Logging level |
@@ -186,6 +225,9 @@ SkillSync/
 ├── .gitignore                    # Git ignore rules
 └── README.md                     # This file
 ```
+
+---
+
 
 ---
 
