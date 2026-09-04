@@ -1,0 +1,99 @@
+# SkillSync - Docker Compose Configuration
+#
+# Orchestrates 4 services:
+#   1. mongodb   — Database (stores all scraped listings)
+#   2. api       — FastAPI REST API (serves listings to clients)
+#   3. scrapers  — Scraper service (collects data from 6 platforms)
+#   4. frontend  — Nginx web server (serves the HTML/CSS/JS frontend)
+#
+# Usage:
+#   docker-compose up              # Start all services
+#   docker-compose up -d           # Start in background (detached)
+#   docker-compose down            # Stop all services
+#   docker-compose logs api        # View API logs
+#   docker-compose logs scrapers   # View scraper logs
+
+services:
+  # ─────────────────────────────────────────────
+  # MongoDB — Document database for storing listings
+  # ─────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: skillsync-mongodb
+    ports:
+      - "27017:27017"  # Expose for local dev access (remove in production)
+    volumes:
+      - mongo_data:/data/db  # Named volume — data persists across restarts
+    restart: unless-stopped
+    networks:
+      - skillsync-network
+
+  # ─────────────────────────────────────────────
+  # API — FastAPI REST service
+  # ─────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: skillsync-api
+    ports:
+      - "8000:8000"  # Access the API at http://localhost:8000
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - DATABASE_NAME=skillsync
+      - LOG_LEVEL=INFO
+    depends_on:
+      - mongodb  # Wait for MongoDB to start first
+    restart: unless-stopped
+    networks:
+      - skillsync-network
+
+  # ─────────────────────────────────────────────
+  # Scrapers — Data collection service
+  # ─────────────────────────────────────────────
+  scrapers:
+    build:
+      context: .
+      dockerfile: scrapers/Dockerfile
+    container_name: skillsync-scrapers
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - DATABASE_NAME=skillsync
+      - SCRAPE_INTERVAL_HOURS=12
+      - HEADLESS=true
+      - LOG_LEVEL=INFO
+      - ROZEE_SESSION_COOKIE=${ROZEE_SESSION_COOKIE:-}
+    depends_on:
+      - mongodb  # Wait for MongoDB to start first
+    restart: unless-stopped
+    networks:
+      - skillsync-network
+
+  # ─────────────────────────────────────────────
+  # Frontend — Nginx serving HTML/CSS/JS
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: skillsync-frontend
+    ports:
+      - "3000:80"  # Access the frontend at http://localhost:3000
+    depends_on:
+      - api  # Wait for API to be available
+    restart: unless-stopped
+    networks:
+      - skillsync-network
+
+# Named volume for MongoDB data persistence
+# Data survives container restarts and recreations
+volumes:
+  mongo_data:
+    name: skillsync-mongo-data
+
+# Internal network connecting all 3 services
+# Services communicate using their service names as hostnames
+# (e.g., the API connects to MongoDB via "mongodb://mongodb:27017")
+networks:
+  skillsync-network:
+    name: skillsync-network

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SkillSync — Browse all internship and tech event listings with filters.">
+    <title>SkillSync — Browse Listings</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Theme -->
+    <script src="js/theme.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        
+        <!-- ═══════════ SIDEBAR ═══════════ -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                Skill<span>Sync</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    Dashboard
+                </a>
+                <a href="browse.html" class="nav-item active">
+                    <span class="nav-icon">✨</span>
+                    Browse
+                </a>
+                <a href="sources.html" class="nav-item">
+                    <span class="nav-icon">🔗</span>
+                    Sources
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="sidebar-footer-item" id="theme-toggle">
+                    🌙 <span>Dark mode</span>
+                </button>
+
+                <div class="sidebar-user">
+                    <div class="user-avatar">SS</div>
+                    <div class="user-info">
+                        <div class="user-name">SkillSync</div>
+                        <div class="user-email">Phase 1 — Data Pipeline</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ═══════════ MAIN ═══════════ -->
+        <div class="main-content">
+
+            <!-- Header -->
+            <header class="top-header">
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="browse-search" 
+                           placeholder="Search opportunities...">
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                
+                <!-- Page Title -->
+                <div class="page-title-bar">
+                    <h1>Browse Opportunities</h1>
+                    <p class="subtitle" id="browse-count">Loading...</p>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <div class="filter-tab-group">
+                        <button class="filter-tab active" data-filter="all">All</button>
+                        <button class="filter-tab" data-filter="rozee">Rozee</button>
+                        <button class="filter-tab" data-filter="mustakbil">Mustakbil</button>
+                        <button class="filter-tab" data-filter="remotive">Remotive</button>
+                        <button class="filter-tab" data-filter="devpost">Devpost</button>
+                    </div>
+
+                    <select class="filter-select" id="browse-source">
+                        <option value="">All sources</option>
+                    </select>
+                </div>
+
+                <!-- Listings Grid -->
+                <div class="listings-grid" id="browse-listings">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <p>Loading listings...</p>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="pagination"></div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ MODAL ═══════════ -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="modal-content"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/browse.js"></script>
+</body>
+</html>

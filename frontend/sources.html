@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SkillSync — Data source status and scraper health monitoring.">
+    <title>SkillSync — Sources</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Theme -->
+    <script src="js/theme.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        
+        <!-- ═══════════ SIDEBAR ═══════════ -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                Skill<span>Sync</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    Dashboard
+                </a>
+                <a href="browse.html" class="nav-item">
+                    <span class="nav-icon">✨</span>
+                    Browse
+                </a>
+                <a href="sources.html" class="nav-item active">
+                    <span class="nav-icon">🔗</span>
+                    Sources
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="sidebar-footer-item" id="theme-toggle">
+                    🌙 <span>Dark mode</span>
+                </button>
+
+                <div class="sidebar-user">
+                    <div class="user-avatar">SS</div>
+                    <div class="user-info">
+                        <div class="user-name">SkillSync</div>
+                        <div class="user-email">Phase 1 — Data Pipeline</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ═══════════ MAIN ═══════════ -->
+        <div class="main-content">
+
+            <!-- Header -->
+            <header class="top-header">
+                <div class="search-container">
+                    <span class="search-icon">🔗</span>
+                    <input type="text" class="search-input" disabled
+                           placeholder="Sources & Status" style="cursor:default">
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                
+                <!-- Page Title -->
+                <div class="page-title-bar">
+                    <h1>Data Sources</h1>
+                    <p class="subtitle">Monitor scraper health and listing counts per platform.</p>
+                </div>
+
+                <!-- Health Banner -->
+                <div id="health-banner" style="margin-bottom: 24px"></div>
+
+                <!-- Source Cards -->
+                <div class="section-header">
+                    <h2>Scraper Sources</h2>
+                </div>
+
+                <div class="sources-grid" id="sources-container">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <p>Loading sources...</p>
+                    </div>
+                </div>
+
+                <!-- Status Table -->
+                <div class="section-header" style="margin-top: 16px">
+                    <h2>Last Scrape Runs</h2>
+                </div>
+
+                <div class="status-table-container" id="status-table-container">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <p>Loading status...</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/sources.js"></script>
+</body>
+</html>
