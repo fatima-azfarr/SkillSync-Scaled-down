@@ -17,6 +17,8 @@ SkillSync aggregates internship and tech event listings from **6 platforms**, cl
 | Wuzzuf.net | BeautifulSoup | Internships (Middle East) |
 
 ### Architecture
+
+```
 APScheduler (12-hour cycle)
          │
     ┌────┼────┬────┬────┬────┐
@@ -30,7 +32,7 @@ APScheduler (12-hour cycle)
              MongoDB
                  ▼
     FastAPI (REST API + Swagger docs)
-
+```
 ---
 
 ## Quick Start (Docker)
