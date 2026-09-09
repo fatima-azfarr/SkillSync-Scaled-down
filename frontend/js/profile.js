@@ -56,7 +56,10 @@ function clearSession() {
     localStorage.removeItem(STUDENT_KEY);
     localStorage.removeItem(STUDENT_NAME_KEY);
     localStorage.removeItem("skillsync-student-email");
+    localStorage.removeItem("skillsync-student-skills");
     currentStudentId = null;
+    document.documentElement.classList.add("auth-mode");
+    document.body.classList.add("auth-mode");
 }
 
 // ─── Toast Notifications ──────────────────────────────
@@ -110,20 +113,29 @@ function switchTab(tab) {
 // ─── Views Switching ──────────────────────────────
 
 function showAuthView() {
-    document.getElementById("auth-view").style.display = "block";
-    document.getElementById("profile-view").style.display = "none";
+    document.documentElement.classList.add("auth-mode");
+    document.body.classList.add("auth-mode");
 
-    const sidebarName = document.getElementById("sidebar-user-name");
-    const sidebarAvatar = document.getElementById("sidebar-user-avatar");
-    const sidebarEmail = document.getElementById("sidebar-user-email");
-    if (sidebarName) sidebarName.textContent = "SkillSync";
-    if (sidebarAvatar) sidebarAvatar.textContent = "SS";
-    if (sidebarEmail) sidebarEmail.textContent = "Sign in to sync";
+    const authView = document.getElementById("auth-view");
+    const profileView = document.getElementById("profile-view");
+    const sidebar = document.getElementById("app-sidebar") || document.querySelector(".sidebar");
+
+    if (authView) authView.style.display = "block";
+    if (profileView) profileView.style.display = "none";
+    if (sidebar) sidebar.style.display = "none";
 }
 
 function showProfileView(student) {
-    document.getElementById("auth-view").style.display = "none";
-    document.getElementById("profile-view").style.display = "flex";
+    document.documentElement.classList.remove("auth-mode");
+    document.body.classList.remove("auth-mode");
+
+    const authView = document.getElementById("auth-view");
+    const profileView = document.getElementById("profile-view");
+    const sidebar = document.getElementById("app-sidebar") || document.querySelector(".sidebar");
+
+    if (authView) authView.style.display = "none";
+    if (profileView) profileView.style.display = "flex";
+    if (sidebar) sidebar.style.display = "flex";
 
     // User details in Card 1
     const name = student.name || "Fatima";

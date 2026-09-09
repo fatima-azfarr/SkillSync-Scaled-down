@@ -16,12 +16,22 @@
 
     <!-- Theme (load early to prevent flash) -->
     <script src="js/theme.js"></script>
+    <script>
+        // Check session early to avoid sidebar flash if logged out
+        (function() {
+            try {
+                if (!localStorage.getItem("skillsync-student-id")) {
+                    document.documentElement.classList.add("auth-mode");
+                }
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body>
     <div class="app-layout">
 
         <!-- ═══════════ SIDEBAR ═══════════ -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="app-sidebar">
             <div class="sidebar-logo">
                 Skill<span>Sync</span>
             </div>
@@ -83,6 +93,16 @@
 
                 <!-- ═══ LOGGED-OUT VIEW: login/register tabs ═══ -->
                 <div id="auth-view" class="auth-container">
+                    <div class="auth-header-card">
+                        <div class="auth-brand-row">
+                            <div class="auth-logo">Skill<span>Sync</span></div>
+                            <button class="auth-theme-toggle-btn" id="auth-theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+                                <svg class="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                            </button>
+                        </div>
+                        <p class="auth-tagline">AI-Driven Internship &amp; Tech Event Discovery</p>
+                    </div>
+
                     <div class="auth-tabs">
                         <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Log In</button>
                         <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
@@ -125,6 +145,10 @@
                         </div>
                         <button type="submit" class="btn-primary" id="register-submit">Create Account</button>
                     </form>
+
+                    <div class="auth-footer-links">
+                        <a href="browse.html" class="auth-guest-link">Explore opportunities as guest →</a>
+                    </div>
                 </div>
 
                 <!-- ═══ LOGGED-IN VIEW: Profile & Skills ═══ -->
