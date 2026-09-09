@@ -1,38 +1,68 @@
 # SkillSync — AI-Driven Internship & Tech Event Discovery Platform
 
-> Phase 1: Backend Data Pipeline — Scraping, Processing & API
+SkillSync is an intelligent career discovery platform that aggregates internship, job, hackathon, and tech event listings from multiple scrapers, extracts required skills using a curated tech taxonomy, and ranks opportunities against university student profiles using a real-time recommendation engine.
 
-## Overview
+Instead of generic keyword search, SkillSync computes exact percentage matches, categorizes opportunities into **Strong Matches** and **Near Misses**, provides actionable **Skill Gap** breakdowns, and streams authentic scraper notifications.
 
-SkillSync aggregates internship and tech event listings from **6 platforms**, cleans and deduplicates them, stores them in MongoDB, and exposes them through a REST API.
+---
 
-### Data Sources
-| Platform | Method | Type |
-|---|---|---|
-| Rozee.pk | Selenium | Internships (Pakistan) |
-| Mustakbil.com | BeautifulSoup | Internships (Pakistan) |
-| Internee.pk | Selenium | Internships (Pakistan) |
-| Remotive | JSON API | Remote tech jobs |
-| Devpost | Selenium | Hackathons & challenges |
-| Wuzzuf.net | BeautifulSoup | Internships (Middle East) |
+## Key Features
 
-### Architecture
+- **Multi-Source Data Pipeline**: Automated scrapers collecting listings across 6 platforms:
+  - **Rozee.pk** (Selenium) — Internships & tech jobs in Pakistan
+  - **Mustakbil.com** (BeautifulSoup) — Software engineering & IT listings in Pakistan
+  - **Internee.pk** (Selenium) — Virtual internship programs
+  - **Remotive** (JSON API) — Global remote software engineering roles
+  - **Devpost** (Selenium) — Hackathons & student innovation challenges
+  - **Wuzzuf.net** (BeautifulSoup) — Tech internships & junior roles across MENA
+- **Skill Extraction & Taxonomy**: Curated tech taxonomy (`scrapers/skills/taxonomy.json`) and keyword extractor (`scrapers/skills/extractor.py`) that normalizes technical skills from raw descriptions into standardized tags.
+- **Student Profile & Authentication**: Secure registration, login, and profile management with university, field of study, custom skill pills, suggestions, and domain interests.
+- **Dynamic Recommendation Engine**:
+  - Computes exact match percentages: $$\text{match\_score} = \text{round}\left(\frac{|\text{matched\_skills}|}{|\text{required\_skills}|} \times 100\right)$$
+  - **Strong Matches ($\ge 70\%$)**: Highlights qualifying roles with verified skill badges.
+  - **Near Misses ($40–69\%$)**: Flags high-potential roles within reach, highlighting the exact missing skills needed to qualify.
+  - **Interactive Recompute Modal**: Triggerable on-demand from the Profile screen to re-evaluate opportunities in real time against updated skills.
+- **Authentic Scraper-Driven Notifications**: Real-time sync logs and top match alerts derived 100% from actual scraper execution runs and database listings (zero mock/dummy placeholders).
+- **Modern Responsive Web UI**:
+  - **Unified SVG Line Icon Design System**: Crisp Feather/Lucide monochrome vector icons across all sidebar navigation items and profile fields.
+  - **Light & Dark Mode**: Persistent theme switching with smooth transitions and dedicated dark palettes.
+  - **5 Interactive Views**: Dashboard (`index.html`), Discover (`browse.html`), Notifications (`notifications.html`), Profile & Skills (`profile.html`), and Scraper Sources (`sources.html`).
+- **Robust Pipeline**: SHA-256 fingerprint deduplication, Pydantic data validation, exponential retry backoff, and asynchronous MongoDB access via Motor.
+
+---
+
+## Architecture
 
 ```
-APScheduler (12-hour cycle)
-         │
-    ┌────┼────┬────┬────┬────┐
-    ▼    ▼    ▼    ▼    ▼    ▼
- Rozee Mustakbil Internee Remotive Devpost Wuzzuf
-    │    │    │    │    │    │
-    └────┴────┴──┬─┴────┴────┘
-                 ▼
-    Shared Pipeline (clean → fingerprint → dedupe → validate)
-                 ▼
-             MongoDB
-                 ▼
-    FastAPI (REST API + Swagger docs)
+                      APScheduler (12-hour cycle)
+                                 │
+    ┌────────────┬───────────┬───┴────────┬────────────┬────────────┐
+    ▼            ▼           ▼            ▼            ▼            ▼
+ Rozee.pk    Mustakbil   Internee.pk   Remotive     Devpost      Wuzzuf
+(Selenium)     (BS4)     (Selenium)   (JSON API)   (Selenium)    (BS4)
+    │            │           │            │            │            │
+    └────────────┴───────────┴─────┬──────┴────────────┴────────────┘
+                                   ▼
+                    Shared Processing Pipeline
+             (clean → fingerprint → dedupe → validate)
+                                   │
+                                   ▼
+                      NLP Skill Taxonomy Extractor
+                     (taxonomy.json → skill tags)
+                                   │
+                                   ▼
+                           MongoDB Database
+            (collections: listings, students, scraper_runs)
+                                   │
+                                   ▼
+                        FastAPI REST API Service
+         (listings, students auth/profile, recommendations, notifications)
+                                   │
+                                   ▼
+                     SkillSync Web Application
+     (Dashboard, Discover, Notifications, Profile, Sources, Dark/Light)
 ```
+
 ---
 
 ## Quick Start (Docker)
@@ -41,8 +71,8 @@ APScheduler (12-hour cycle)
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/SkillSync.git
-cd SkillSync
+git clone https://github.com/fatima-azfarr/SkillSync-scaled-down.git
+cd SkillSync-scaled-down
 
 # 2. Create your .env file
 cp .env.example .env
@@ -50,73 +80,41 @@ cp .env.example .env
 # 3. Start all services
 docker-compose up
 
-# 4. Open Swagger UI in your browser
-# http://localhost:8000/docs
+# 4. Access the application
+# - API & Swagger Docs: http://localhost:8000/docs
+# - Frontend Web App:   http://localhost:5500
 ```
-
-That's it! MongoDB, the API, and the scrapers all start automatically.
-
-
----
-
-## Quick Start (Docker)
-
-**Prerequisites:** Docker and Docker Compose installed.
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/your-username/SkillSync.git
-cd SkillSync
-
-# 2. Create your .env file
-cp .env.example .env
-
-# 3. Start all services
-docker-compose up
-
-# 4. Open Swagger UI in your browser
-# http://localhost:8000/docs
-```
-
-That's it! MongoDB, the API, and the scrapers all start automatically.
 
 ---
 
 ## Quick Start (Local Development)
 
-**Prerequisites:** Python 3.11 (newer versions like 3.13/3.14 currently fail to build `lxml` and `pydantic-core` — no compatible wheels yet), MongoDB installed locally, Google Chrome installed.
+**Prerequisites:** Python 3.11, MongoDB installed and running locally, Google Chrome.
 
 ```bash
-# 1. Create virtual environment
-python3.11 -m venv venv
-source venv/bin/activate     # Mac/Linux
-venv\Scripts\activate        # Windows
+# 1. Clone the repository
+git clone https://github.com/fatima-azfarr/SkillSync-scaled-down.git
+cd SkillSync-scaled-down
 
-# 2. Install dependencies
+# 2. Create virtual environment & activate
+python3.11 -m venv venv
+source venv/bin/activate       # macOS / Linux
+# venv\Scripts\activate        # Windows
+
+# 3. Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# 3. Create your .env file
+# 4. Configure environment variables
 cp .env.example .env
-# Edit .env with your MongoDB URI — for local MongoDB (not Docker), use:
-# MONGODB_URI=mongodb://localhost:27017
+# Ensure MONGODB_URI=mongodb://localhost:27017
 
-# 4. Start MongoDB if it isn't already running
-mongod --dbpath ~/data/db
-# Leave this running in its own terminal
+# 5. Start the FastAPI backend server
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
-# 5. Start the API server (in a new terminal)
-source venv/bin/activate
-uvicorn api.main:app --reload
-# Runs at http://127.0.0.1:8000
-
-# 6. Start the scrapers (in a separate terminal)
+# 6. Run a scraper or backfill (in a separate terminal)
 source venv/bin/activate
 python -m scrapers.main
-# If Selenium scrapers (wuzzuf, rozee, internee, devpost) fail with a
-# chromedriver "Exec format error", clear the driver cache and retry:
-#   rm -rf ~/.wdm
-#   python -m scrapers.main
 
 # 7. Serve the frontend (in a separate terminal)
 cd frontend
@@ -126,58 +124,33 @@ python3 -m http.server 5500
 
 ---
 
-## API Endpoints
+## API Endpoints Reference
 
+### Core Listings & Scrapers
 | Endpoint | Method | Description |
 |---|---|---|
-| `/` | GET | Welcome message |
-| `/listings` | GET | List all listings (with filters & pagination) |
-| `/listings/{id}` | GET | Get a single listing by ID |
-| `/sources` | GET | List scraper sources with stats |
-| `/health` | GET | Health check (API + database) |
-| `/scrape/status` | GET | Last scraper run summary |
+| `/listings` | GET | List opportunities with filtering (`source`, `keyword`, `domain`, `page`, `page_size`) |
+| `/listings/{id}` | GET | Retrieve complete listing details |
+| `/sources` | GET | Active scraper sources and synchronization metrics |
+| `/health` | GET | API and MongoDB connectivity health check |
+| `/scrape/status` | GET | Summary of the most recent scraper runs |
 
-### Query Parameters for `/listings`
-
-| Parameter | Type | Description | Example |
-|---|---|---|---|
-| `source` | string | Filter by platform | `?source=rozee` |
-| `keyword` | string | Search in title/description | `?keyword=python` |
-| `domain` | string | Filter by domain (FYP-I) | `?domain=web_dev` |
-| `page` | int | Page number (default: 1) | `?page=2` |
-| `page_size` | int | Results per page (default: 20, max: 100) | `?page_size=10` |
-
-### Example API Calls
-
-```bash
-# Get all listings
-curl http://localhost:8000/listings
-
-# Filter by source
-curl http://localhost:8000/listings?source=remotive
-
-# Search for Python internships
-curl http://localhost:8000/listings?keyword=python
-
-# Paginate results
-curl http://localhost:8000/listings?page=1&page_size=5
-
-# Health check
-curl http://localhost:8000/health
-```
-
----
-
-## Environment Variables
-
-| Variable | Default | Description |
+### Student Profile & Recommendations
+| Endpoint | Method | Description |
 |---|---|---|
-| `MONGODB_URI` | `mongodb://localhost:27017` | MongoDB connection string |
-| `DATABASE_NAME` | `skillsync` | MongoDB database name |
-| `SCRAPE_INTERVAL_HOURS` | `12` | Hours between scrape cycles |
-| `LOG_LEVEL` | `INFO` | Logging level |
-| `HEADLESS` | `true` | Run Selenium in headless mode |
-| `ROZEE_SESSION_COOKIE` | (empty) | Optional CAPTCHA bypass cookie |
+| `/students/register` | POST | Register a new student account |
+| `/students/login` | POST | Authenticate student and initiate session |
+| `/students/{id}` | GET | Retrieve student profile (university, skills, interests) |
+| `/students/{id}/profile` | PUT | Update student full profile and educational info |
+| `/students/{id}/skills` | PUT | Update student skills list |
+| `/students/{id}/recompute` | POST | Trigger recommendation engine pass; returns match scores, strong fits, and near-misses |
+
+### Notifications
+| Endpoint | Method | Description |
+|---|---|---|
+| `/notifications` | GET | Scraper synchronization logs and student match notifications |
+| `/notifications/stats` | GET | Unread notifications count and summary |
+| `/notifications/{id}/read` | PUT | Mark an individual notification as read |
 
 ---
 
@@ -186,103 +159,113 @@ curl http://localhost:8000/health
 ```
 SkillSync/
 ├── api/                          # FastAPI REST API service
-│   ├── Dockerfile
-│   ├── main.py                   # App entry point
-│   ├── config.py                 # Settings
-│   ├── database.py               # MongoDB connection (Motor)
-│   ├── models.py                 # Response models
+│   ├── auth.py                   # Password hashing & authentication helpers
+│   ├── config.py                 # Application configuration & env settings
+│   ├── database.py               # Asynchronous MongoDB client (Motor)
+│   ├── main.py                   # FastAPI application initialization & routes
+│   ├── models.py                 # Pydantic request & response schemas
 │   └── routes/
-│       ├── listings.py           # /listings endpoints
-│       ├── sources.py            # /sources endpoint
-│       └── health.py             # /health + /scrape/status
+│       ├── health.py             # /health & /scrape/status
+│       ├── listings.py           # /listings endpoints & filters
+│       ├── notifications.py      # /notifications scraper activity endpoints
+│       ├── sources.py            # /sources scraper metrics
+│       └── students.py           # Student auth, profile & recommendation engine
 │
-├── scrapers/                     # Scraper service
-│   ├── Dockerfile
-│   ├── main.py                   # Entry point + scheduler
-│   ├── config.py                 # Settings
-│   ├── pipeline.py               # Processing pipeline
-│   ├── models.py                 # Pydantic schemas
-│   ├── fingerprint.py            # SHA-256 dedup hashing
+├── frontend/                     # Modern Web Application
+│   ├── css/
+│   │   ├── discover.css          # Discover page & modal styles
+│   │   ├── profile.css           # Profile screen & Recompute modal styles
+│   │   └── style.css             # Unified design system & dashboard styles
+│   ├── js/
+│   │   ├── api.js                # Frontend API client library
+│   │   ├── browse.js             # Discover page interaction & modal logic
+│   │   ├── dashboard.js          # Dashboard matching, filtering & cards
+│   │   ├── notifications.js      # Live notifications feed logic
+│   │   ├── profile.js            # Profile editing & recommendation modal logic
+│   │   └── theme.js              # Dark/Light mode toggle with SVG icons
+│   ├── browse.html               # Discover opportunities page
+│   ├── index.html                # Main student dashboard
+│   ├── notifications.html        # Scraper activity & match notifications
+│   ├── profile.html              # Profile & skills management
+│   └── sources.html              # Scraper monitoring & status
+│
+├── scrapers/                     # Web Scraper Pipeline Service
+│   ├── config.py                 # Scraper configuration
+│   ├── fingerprint.py            # SHA-256 deduplication fingerprinting
 │   ├── logger.py                 # Structured logging
-│   ├── utils.py                  # UA rotation, delays, Selenium
-│   └── spiders/
-│       ├── base.py               # Base scraper class
-│       ├── rozee.py              # Rozee.pk (Selenium)
-│       ├── mustakbil.py          # Mustakbil (BeautifulSoup)
-│       ├── internee.py           # Internee.pk (Selenium)
-│       ├── remotive.py           # Remotive (JSON API)
-│       ├── devpost.py            # Devpost (Selenium)
-│       └── wuzzuf.py             # Wuzzuf (BeautifulSoup)
+│   ├── main.py                   # Scraper runner & APScheduler trigger
+│   ├── models.py                 # Scraper data validation models
+│   ├── pipeline.py               # Storage, deduplication & skill extraction pipeline
+│   ├── utils.py                  # User-agent rotation, delays, Selenium helpers
+│   ├── skills/                   # NLP & Taxonomy Skill Extraction
+│   │   ├── extractor.py          # Regex/lexicon-based skill extraction
+│   │   └── taxonomy.json         # Standardized technical skills dictionary
+│   └── spiders/                  # Platform Spiders
+│       ├── base.py               # Abstract scraper base class
+│       ├── devpost.py            # Devpost hackathons (Selenium)
+│       ├── internee.py           # Internee.pk internships (Selenium)
+│       ├── mustakbil.py          # Mustakbil.com listings (BeautifulSoup)
+│       ├── remotive.py           # Remotive remote tech jobs (JSON API)
+│       ├── rozee.py              # Rozee.pk internships (Selenium)
+│       └── wuzzuf.py             # Wuzzuf.net listings (BeautifulSoup)
 │
-├── tests/                        # Test suite
-│   ├── conftest.py               # Shared fixtures
-│   ├── test_fingerprint.py       # Unit: hashing
-│   ├── test_models.py            # Unit: schema validation
-│   ├── test_pipeline.py          # Integration: pipeline
-│   └── test_api.py               # API: all endpoints
+├── scripts/                      # Utility Scripts
+│   ├── backfill.py               # Historical listings skill backfill
+│   └── mustakbil_backfill.py     # Mustakbil data processor
 │
-├── docker-compose.yml            # Full stack orchestration
-├── requirements.txt              # Python dependencies
-├── .env.example                  # Environment template
-├── .gitignore                    # Git ignore rules
-└── README.md                     # This file
+├── tests/                        # Comprehensive Test Suite
+│   ├── conftest.py               # Shared pytest fixtures & mock database
+│   ├── test_api.py               # API endpoint validation
+│   ├── test_fingerprint.py       # Fingerprint hashing unit tests
+│   ├── test_models.py            # Pydantic schema validation tests
+│   ├── test_pipeline.py          # Processing pipeline integration tests
+│   └── test_students.py          # Student auth, profile & recompute tests
+│
+├── docker-compose.yml            # Multi-container orchestration
+├── requirements.txt              # Project dependencies
+└── README.md                     # Project documentation
 ```
-
----
-
 
 ---
 
 ## Running Tests
 
-```bash
-# Make sure MongoDB is running, then:
-pytest tests/ -v
+All unit, integration, and API tests are automated using `pytest`:
 
-# Run specific test files
-pytest tests/test_fingerprint.py -v    # Fingerprint unit tests
-pytest tests/test_models.py -v         # Schema validation tests
-pytest tests/test_pipeline.py -v       # Pipeline integration tests
-pytest tests/test_api.py -v            # API endpoint tests
+```bash
+# Run the entire test suite
+pytest -v
+
+# Run specific test modules
+pytest tests/test_students.py -v       # Student auth & recommendation engine
+pytest tests/test_api.py -v            # API endpoints
+pytest tests/test_pipeline.py -v       # Pipeline & deduplication
+pytest tests/test_models.py -v         # Schema validation
+pytest tests/test_fingerprint.py -v    # Hashing
+```
+
+**Current Test Status:**
+```
+============================== 46 passed in 4.97s ==============================
 ```
 
 ---
 
 ## Technology Stack
 
-| Component | Technology | Purpose |
+| Layer | Technologies | Purpose |
 |---|---|---|
-| Language | Python 3.11 | Core language |
-| API Framework | FastAPI | REST API with auto-docs |
-| Database | MongoDB | Document store for listings |
-| DB Driver (API) | Motor | Async MongoDB for FastAPI |
-| DB Driver (Scrapers) | PyMongo | Sync MongoDB for scrapers |
-| Static Scraping | BeautifulSoup4 | HTML parsing |
-| Dynamic Scraping | Selenium | JavaScript-rendered pages |
-| Driver Management | webdriver-manager | Auto ChromeDriver |
-| Scheduling | APScheduler | 12-hour scrape cycles |
-| Validation | Pydantic | Schema validation |
-| Containerization | Docker + Compose | Deployment |
-| Testing | pytest + httpx | Unit/integration/API tests |
-
----
-
-## FYP-I Roadmap (Phase 2 — Not in current scope)
-
-- [ ] spaCy NER-based skill extraction from descriptions
-- [ ] TF-IDF domain classifier (web dev, data science, etc.)
-- [ ] Content-based filtering recommendation engine
-- [ ] Collaborative filtering layer
-- [ ] React.js dashboard (matched + near-miss listings)
-- [ ] Student registration and skill profile management
-- [ ] Notification system for new matches
+| **Backend & API** | Python 3.11, FastAPI, Pydantic, Motor | High-performance asynchronous REST API |
+| **Database** | MongoDB | Document store for flexible multi-source listings & students |
+| **Data Acquisition** | BeautifulSoup4, Selenium, Requests, Scrapy | Multi-platform scraping (static HTML, JS-rendered, JSON API) |
+| **NLP & Skills** | Custom Taxonomy Engine (`taxonomy.json`), Regex | Tech skill normalization & extraction from raw descriptions |
+| **Matching Engine** | Content-based similarity & Jaccard skill-fit | Real-time match scoring, near-miss categorization, gap analysis |
+| **Frontend Web App** | HTML5, Vanilla CSS3, Modern ES6+ JavaScript | Fast, accessible, framework-free UI with responsive design |
+| **Design System** | Custom CSS Variables, Feather/Lucide SVG icons | Unified dark/light themes, sleek card layouts, micro-animations |
+| **DevOps & Testing** | Docker, Docker Compose, Pytest, APScheduler | 12-hour scheduler, containerization, automated testing |
 
 ---
 
 ## License
 
-This project is part of a Final Year Project (FYP) at university.
-
-## Version
-
-`v0.1.0` — Phase 1: Backend Data Pipeline
+This project is developed as a University Final Year Project (FYP).
