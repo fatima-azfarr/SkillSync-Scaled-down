@@ -14,6 +14,7 @@ Documentation: https://remotive.com/api/remote-jobs?limit=5 (try it in your brow
 from typing import List, Dict, Any
 from datetime import datetime
 import requests
+import re
 
 from scrapers.spiders.base import BaseScraper
 from scrapers.utils import get_requests_headers, clean_text
@@ -115,10 +116,14 @@ class RemotiveScraper(BaseScraper):
                 except (ValueError, TypeError):
                     pass
             
+            raw_desc = clean_text(job.get("description", ""))
+            # Strip promotional agency keyword stuffing if present
+            raw_desc = re.sub(r"<p><strong>\s*NOT YOUR TECH STACK[\s\S]*?(?:<img|$)", "", raw_desc, flags=re.IGNORECASE).strip()
+
             return {
                 "title": title,
                 "source_url": job.get("url", ""),
-                "description_raw": clean_text(job.get("description", "")),
+                "description_raw": raw_desc,
                 "company": clean_text(job.get("company_name", "")) or None,
                 "location": clean_text(
                     job.get("candidate_required_location", "Remote")

@@ -13,17 +13,18 @@ The pipeline ensures:
 4. Only valid data (passes Pydantic schema) gets saved
 5. Run statistics are logged for monitoring
 """
-
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 
-from scrapers.models import ListingSchema, ScraperRunLog
-from scrapers.fingerprint import generate_fingerprint
-from scrapers.utils import clean_text
-from scrapers.logger import get_logger, log_scraper_end
 from scrapers.config import config
+from scrapers.fingerprint import generate_fingerprint
+from scrapers.logger import get_logger, log_scraper_end
+from scrapers.models import ListingSchema, ScraperRunLog
+from scrapers.skills.extractor import extract_skills
+from scrapers.utils import clean_text
 
 logger = get_logger("pipeline")
 
@@ -174,7 +175,7 @@ class Pipeline:
         Returns:
             Cleaned listing dictionary
         """
-        cleaned = {}
+        cleaned: Dict[str, Any] = {}
         
         # Clean text fields
         cleaned["title"] = clean_text(raw.get("title", ""))
@@ -192,8 +193,11 @@ class Pipeline:
         cleaned["scraped_at"] = datetime.utcnow()
         cleaned["is_active"] = True
         
-        # Phase 2 fields - empty for now
-        cleaned["domain_tag"] = None
-        cleaned["skills"] = []
-        
+        # Phase 2: rule-based skill extraction (no ML - see
+        # scrapers/skills/extractor.py for how/why)
+        searchable_text = f"{cleaned['title']} {cleaned['description_raw']}"
+        cleaned["skills"] = extract_skills(searchable_text)
+        cleaned["domain_tag"] = None  # still deferred - not needed for
+                                      # content-based filtering, only
+                                      # for the classifier you're skipping
         return cleaned

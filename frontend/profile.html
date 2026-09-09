@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SkillSync — Profile & skills management.">
+    <title>SkillSync — Profile & skills</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/profile.css">
+
+    <!-- Theme (load early to prevent flash) -->
+    <script src="js/theme.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+
+        <!-- ═══════════ SIDEBAR ═══════════ -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                Skill<span>Sync</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-nav-top">
+                    <a href="index.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        </span>
+                        Dashboard
+                    </a>
+                    <a href="browse.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                        </span>
+                        Discover
+                    </a>
+                    <a href="notifications.html" class="nav-item">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        </span>
+                        Notifications
+                        <span class="nav-badge">2</span>
+                    </a>
+                    <a href="profile.html" class="nav-item active">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </span>
+                        Profile
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="sidebar-footer-item" id="theme-toggle">
+                    <svg class="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <span>Dark mode</span>
+                </button>
+
+                <button class="sidebar-footer-item" id="sidebar-logout-btn" style="color:var(--text-secondary);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <span>Sign out</span>
+                </button>
+
+                <div class="sidebar-user" id="sidebar-user-badge">
+                    <div class="user-avatar" id="sidebar-user-avatar">F</div>
+                    <div class="user-info">
+                        <div class="user-name" id="sidebar-user-name">Fatima</div>
+                        <div class="user-email" id="sidebar-user-email">fa23-bcs-185@cuilahore.edu.pk</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ═══════════ MAIN CONTENT ═══════════ -->
+        <div class="main-content">
+            <div class="page-content" style="padding-top: 28px;">
+
+                <!-- ═══ LOGGED-OUT VIEW: login/register tabs ═══ -->
+                <div id="auth-view" class="auth-container">
+                    <div class="auth-tabs">
+                        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Log In</button>
+                        <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+                    </div>
+
+                    <div id="auth-message"></div>
+
+                    <!-- Login form -->
+                    <form class="auth-form" id="login-form">
+                        <div class="form-group">
+                            <label for="login-email">Email</label>
+                            <input type="email" id="login-email" class="form-input" required
+                                   placeholder="fa23-bcs-185@cuilahore.edu.pk">
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Password</label>
+                            <input type="password" id="login-password" class="form-input" required
+                                   placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn-primary" id="login-submit">Log In</button>
+                    </form>
+
+                    <!-- Register form -->
+                    <form class="auth-form" id="register-form" style="display: none;">
+                        <div class="form-group">
+                            <label for="register-name">Full Name</label>
+                            <input type="text" id="register-name" class="form-input" required
+                                   placeholder="Fatima">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-email">Email</label>
+                            <input type="email" id="register-email" class="form-input" required
+                                   placeholder="fa23-bcs-185@cuilahore.edu.pk">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-password">Password</label>
+                            <input type="password" id="register-password" class="form-input" required
+                                   placeholder="At least 8 characters">
+                            <div class="form-hint">Minimum 8 characters.</div>
+                        </div>
+                        <button type="submit" class="btn-primary" id="register-submit">Create Account</button>
+                    </form>
+                </div>
+
+                <!-- ═══ LOGGED-IN VIEW: Profile & Skills ═══ -->
+                <div class="profile-container" id="profile-view" style="display: none;">
+
+                    <!-- Profile Header Bar -->
+                    <div class="profile-header-bar">
+                        <div class="profile-title-group">
+                            <h1>Profile &amp; skills</h1>
+                            <p>Keep this updated for better recommendations.</p>
+                        </div>
+                        <button class="btn-save-changes" id="save-changes-btn">Save changes</button>
+                    </div>
+
+                    <!-- Toast / Alert Message -->
+                    <div id="profile-toast" class="profile-toast"></div>
+
+                    <!-- Card 1: User Profile & Education -->
+                    <div class="profile-section-card">
+                        <div class="profile-user-top">
+                            <div class="profile-user-avatar-large" id="profile-card-avatar">F</div>
+                            <div class="profile-user-meta">
+                                <h2 id="profile-card-name">Fatima</h2>
+                                <p id="profile-card-email">fa23-bcs-185@cuilahore.edu.pk</p>
+                            </div>
+                        </div>
+
+                        <div class="profile-education-row">
+                            <div class="education-col">
+                                <label for="profile-university">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                                    <span>University</span>
+                                </label>
+                                <input type="text" id="profile-university" class="education-input"
+                                       placeholder="Comsats University">
+                            </div>
+                            <div class="education-col">
+                                <label for="profile-field">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                                    <span>Field of study</span>
+                                </label>
+                                <input type="text" id="profile-field" class="education-input"
+                                       placeholder="Computer Science">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Your Skills -->
+                    <div class="profile-section-card">
+                        <div class="section-card-title">Your skills</div>
+
+                        <div class="skill-search-row">
+                            <input type="text" id="skill-input" class="skill-search-input"
+                                   placeholder="Type a skill and press Enter">
+                            <button class="skill-add-btn-round" id="skill-add-btn" title="Add skill">+</button>
+                        </div>
+
+                        <div class="skills-pills-wrap" id="skills-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+
+                        <hr class="skills-divider">
+
+                        <div class="suggestions-header">Suggestions</div>
+                        <div class="suggestions-chips" id="suggestions-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Domain Interests -->
+                    <div class="profile-section-card">
+                        <div class="section-card-title">Domain interests</div>
+                        <div class="domains-pills-wrap" id="domains-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Recompute Recommendations -->
+                    <div class="profile-section-card recompute-card">
+                        <div class="recompute-info">
+                            <h3>Recompute recommendations</h3>
+                            <p>Trigger a fresh pass of the recommendation engine with your updated skills and interests.</p>
+                        </div>
+                        <button class="btn-recompute" id="recompute-btn">
+                            <svg id="recompute-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            <span>Recompute</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Recompute Recommendations Results Modal -->
+        <div class="recompute-modal-overlay" id="recompute-modal" style="display: none;" aria-hidden="true">
+            <div class="recompute-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="recompute-modal-title">
+                <div class="recompute-modal-header">
+                    <div class="recompute-header-title-wrap">
+                        <span class="recompute-engine-pill">
+                            <span class="pulse-dot"></span> Recommendation Engine
+                        </span>
+                        <h2 id="recompute-modal-title">Fresh Recommendations Computed</h2>
+                        <p id="recompute-modal-subtitle">We evaluated your profile against all active scraped listings.</p>
+                    </div>
+                    <button class="recompute-modal-close-btn" id="recompute-modal-close" aria-label="Close modal">✕</button>
+                </div>
+
+                <div class="recompute-modal-body">
+                    <!-- Stats Grid -->
+                    <div class="recompute-stats-grid">
+                        <div class="recompute-stat-card">
+                            <div class="stat-card-num" id="recompute-stat-evaluated">0</div>
+                            <div class="stat-card-label">Listings Evaluated</div>
+                        </div>
+                        <div class="recompute-stat-card stat-card-matched">
+                            <div class="stat-card-num" id="recompute-stat-matched">0</div>
+                            <div class="stat-card-label">Strong Matches (≥70%)</div>
+                        </div>
+                        <div class="recompute-stat-card stat-card-nearmiss">
+                            <div class="stat-card-num" id="recompute-stat-nearmiss">0</div>
+                            <div class="stat-card-label">Near Misses (40-69%)</div>
+                        </div>
+                    </div>
+
+                    <!-- Top Matches Section -->
+                    <div class="recompute-section">
+                        <div class="recompute-section-head">
+                            <div class="section-title-wrap">
+                                <span class="section-icon">🌟</span>
+                                <h3>Top Matched Opportunities</h3>
+                            </div>
+                            <span class="recompute-count-badge" id="recompute-matches-count">0 found</span>
+                        </div>
+                        <div class="recompute-cards-list" id="recompute-matches-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Near Misses Section -->
+                    <div class="recompute-section">
+                        <div class="recompute-section-head">
+                            <div class="section-title-wrap">
+                                <span class="section-icon">🎯</span>
+                                <h3>Near Misses (Skills to Learn)</h3>
+                            </div>
+                            <span class="recompute-count-badge badge-near" id="recompute-nearmiss-count">0 found</span>
+                        </div>
+                        <p class="section-subtext">Acquiring these missing skills will unlock these opportunities:</p>
+                        <div class="recompute-cards-list" id="recompute-nearmiss-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recompute-modal-footer">
+                    <button class="btn-modal-dismiss" id="recompute-modal-done">Close</button>
+                    <a href="index.html" class="btn-modal-dashboard">
+                        <span>View on Dashboard</span>
+                        <span class="arrow-icon">→</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Help Button -->
+        <button class="floating-help-btn" id="help-btn" title="Help &amp; FAQ">?</button>
+        <div class="help-popup" id="help-popup">
+            <h4>💡 Profile &amp; Skills Guide</h4>
+            <p>SkillSync recommends tech opportunities based on your skills and domain interests. Click any suggestion to add it, or select your domains to get matched listings!</p>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/profile.js"></script>
+</body>
+</html>

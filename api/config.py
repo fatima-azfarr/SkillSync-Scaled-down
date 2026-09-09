@@ -1,17 +1,5 @@
-"""
-SkillSync - API Configuration
-
-Loads API settings from environment variables using Pydantic BaseSettings.
-This approach is recommended by FastAPI's documentation.
-
-Why Pydantic BaseSettings?
-- Automatically reads from environment variables
-- Provides type validation
-- Supports .env files via python-dotenv
-- Gives us a single place to manage all configuration
-"""
-
 import os
+
 from dotenv import load_dotenv
 
 # Load .env file if it exists
@@ -38,6 +26,7 @@ class APIConfig:
     # Collection names
     LISTINGS_COLLECTION: str = "listings"
     SCRAPER_RUNS_COLLECTION: str = "scraper_runs"
+    STUDENTS_COLLECTION: str = "students" 
 
 
 # Global config instance

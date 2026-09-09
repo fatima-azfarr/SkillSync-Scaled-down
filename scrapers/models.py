@@ -1,14 +1,7 @@
-"""
-SkillSync - Listing Schema (Pydantic Models)
-
-Defines the data structure for internship/event listings.
-Every listing scraped from any of the 6 sources must conform to this schema
-before being stored in MongoDB.
-"""
+from datetime import datetime
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
-from typing import Optional, List
-from datetime import datetime
 
 
 class ListingSchema(BaseModel):
@@ -22,7 +15,7 @@ class ListingSchema(BaseModel):
     """
     
     # Required fields - every listing must have these
-    title: str = Field(..., description="Job/event title as scraped")
+    title: str = Field(..., min_length=1, description="Job/event title as scraped")
     source: str = Field(..., description="Platform name, e.g. 'rozee', 'devpost'")
     source_url: str = Field(..., description="Direct link to the original listing")
     description_raw: str = Field(default="", description="Full description text as scraped")
@@ -57,3 +50,4 @@ class ScraperRunLog(BaseModel):
     listings_failed: int = Field(default=0, description="Listings that failed validation")
     errors: List[str] = Field(default_factory=list, description="Any error messages during the run")
     status: str = Field(default="running", description="'running', 'success', or 'failed'")
+

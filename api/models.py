@@ -1,19 +1,7 @@
-"""
-SkillSync - API Response Models (Pydantic)
-
-These models define the shape of the JSON that our API returns.
-Pydantic automatically validates the data and generates the
-OpenAPI/Swagger documentation.
-
-Why separate models for API responses vs. scraper models?
-- Scraper models are for input validation (what goes INTO the database)
-- API models are for output formatting (what comes OUT of the API)
-- They may have different fields (e.g., API includes _id, scraper doesn't)
-"""
-
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, EmailStr, Field
 
 
 class ListingResponse(BaseModel):
@@ -84,3 +72,71 @@ class HealthResponse(BaseModel):
     status: str = Field(..., description="'ok' if the service is healthy")
     database: str = Field(..., description="'connected' or 'disconnected'")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class StudentRegister(BaseModel):
+    """Request body for POST /students/register."""
+    name: str = Field(..., min_length=1, description="Student's full name")
+    email: EmailStr = Field(..., description="Student's email - must be unique")
+    password: str = Field(..., min_length=8,
+                           description="Plaintext password (min 8 chars) - hashed before storage")
+    skills: List[str] = Field(default_factory=list, description="Initial skill list, from the taxonomy")
+    preferred_domain: Optional[str] = Field(default=None, description="e.g. 'web development'")
+    preferred_location: Optional[str] = Field(default=None, description="Preferred location, or 'Remote'")
+    university: Optional[str] = Field(default=None, description="University or institution name")
+    field_of_study: Optional[str] = Field(default=None, description="e.g. 'Computer Science'")
+    domain_interests: List[str] = Field(default_factory=list, description="List of domain interests")
+
+
+class StudentLogin(BaseModel):
+    """Request body for POST /students/login."""
+    email: EmailStr
+    password: str
+
+
+class StudentSkillsUpdate(BaseModel):
+    """Request body for PUT /students/{id}/skills."""
+    skills: List[str] = Field(default_factory=list, description="Replacement skill list")
+
+
+class StudentPreferencesUpdate(BaseModel):
+    """Request body for PUT /students/{id}/preferences."""
+    preferred_domain: Optional[str] = Field(default=None, description="e.g. 'web development'")
+    preferred_location: Optional[str] = Field(default=None, description="Preferred location, or 'Remote'")
+
+
+class StudentProfileUpdate(BaseModel):
+    """Request body for PUT /students/{id}/profile."""
+    skills: List[str] = Field(default_factory=list, description="Full replacement skill list")
+    preferred_domain: Optional[str] = Field(default=None, description="e.g. 'web development'")
+    preferred_location: Optional[str] = Field(default=None, description="Preferred location, or 'Remote'")
+    university: Optional[str] = Field(default=None, description="University or institution name")
+    field_of_study: Optional[str] = Field(default=None, description="e.g. 'Computer Science'")
+    domain_interests: List[str] = Field(default_factory=list, description="List of domain interests")
+
+
+class StudentResponse(BaseModel):
+    """What the API returns for a student - never includes password_hash."""
+    id: str
+    name: str
+    email: EmailStr
+    skills: List[str]
+    preferred_domain: Optional[str] = None
+    preferred_location: Optional[str] = None
+    university: Optional[str] = None
+    field_of_study: Optional[str] = None
+    domain_interests: List[str] = Field(default_factory=list)
+    created_at: datetime
+
+
+class NotificationResponse(BaseModel):
+    """Notification item derived from scrapers and matching engine."""
+    id: str = Field(..., description="Unique notification ID")
+    type: str = Field(..., description="'match', 'deadline', 'scraper', 'skill_gap', 'near_miss'")
+    title: str = Field(..., description="Notification headline")
+    timestamp: datetime = Field(..., description="Notification event timestamp")
+    icon: str = Field(..., description="'sparkles', 'clock', 'bell', 'lightbulb'")
+    read: bool = Field(default=False, description="Whether notification is read")
+    link: Optional[str] = Field(default=None, description="Optional link to target listing or filter")
+    source: Optional[str] = Field(default=None, description="Source scraper name")
+    domain: Optional[str] = Field(default=None, description="Domain tag")
+

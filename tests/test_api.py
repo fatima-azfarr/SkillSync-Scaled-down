@@ -276,3 +276,28 @@ class TestScrapeStatusEndpoint:
         assert rozee_status is not None
         assert rozee_status["status"] == "success"
         assert rozee_status["listings_found"] == 10
+
+
+@pytest.mark.asyncio
+class TestNotificationsEndpoint:
+    """Tests for the /notifications endpoint."""
+    
+    async def test_get_notifications(self, async_client):
+        """GET /notifications should return scraper-derived notifications."""
+        response = await async_client.get("/notifications")
+        
+        assert response.status_code == 200
+        notifications = response.json()
+        assert isinstance(notifications, list)
+        assert len(notifications) >= 1
+        
+        # Each notification should have required fields
+        for item in notifications:
+            assert "id" in item
+            assert "type" in item
+            assert "title" in item
+            assert "icon" in item
+            assert "timestamp" in item
+            assert "read" in item
+
+

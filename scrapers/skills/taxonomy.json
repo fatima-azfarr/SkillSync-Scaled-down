@@ -1,0 +1,56 @@
+{
+  "programming_languages": [
+    "python", "javascript", "typescript", "java", "c++", "c#", "c",
+    "php", "go", "golang", "rust", "kotlin", "swift", "dart", "ruby",
+    "r", "matlab", "sql", "html", "css", "bash", "scala"
+  ],
+  "web_frameworks": [
+    "react", "react native", "next.js", "nextjs", "vue", "vue.js",
+    "angular", "node.js", "nodejs", "express", "express.js", "django",
+    "flask", "fastapi", "laravel", "spring boot", "ruby on rails",
+    "asp.net", ".net", "bootstrap", "tailwind", "tailwind css",
+    "jquery", "redux", "graphql", "rest api", "restful api"
+  ],
+  "mobile": [
+    "android", "ios", "flutter", "react native", "swift ui",
+    "kotlin", "xamarin"
+  ],
+  "data_ml_tools": [
+    "machine learning", "deep learning", "data science",
+    "data analysis", "data visualization", "pandas", "numpy",
+    "scikit-learn", "tensorflow", "pytorch", "keras", "nlp",
+    "computer vision", "power bi", "tableau", "excel",
+    "data structures", "data structures and algorithms", "dsa",
+    "artificial intelligence"
+  ],
+  "databases": [
+    "mysql", "postgresql", "postgres", "mongodb", "sqlite",
+    "firebase", "redis", "oracle", "nosql", "database management"
+  ],
+  "cloud_devops": [
+    "aws", "azure", "google cloud", "gcp", "docker", "kubernetes",
+    "ci/cd", "jenkins", "git", "github", "gitlab", "linux",
+    "devops", "terraform", "nginx"
+  ],
+  "design_tools": [
+    "figma", "adobe xd", "photoshop", "illustrator", "ui/ux",
+    "ui design", "ux design", "canva", "wireframing", "prototyping"
+  ],
+  "testing_qa": [
+    "selenium", "pytest", "junit", "unit testing", "manual testing",
+    "automation testing", "postman", "qa testing"
+  ],
+  "soft_skills": [
+    "communication", "teamwork", "leadership", "problem solving",
+    "time management", "project management", "agile", "scrum",
+    "critical thinking", "adaptability"
+  ],
+  "domains_roles": [
+    "web development", "mobile development", "backend development",
+    "frontend development", "full stack development",
+    "software engineering", "cybersecurity", "networking",
+    "cloud computing", "blockchain", "game development",
+    "digital marketing", "seo", "content writing",
+    "graphic design", "business analysis", "product management"
+  ]
+}

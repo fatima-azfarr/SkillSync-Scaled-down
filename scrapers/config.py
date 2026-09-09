@@ -1,12 +1,5 @@
-"""
-SkillSync - Scraper Configuration
-
-Loads settings from environment variables using Pydantic.
-This keeps secrets out of the code and makes the app configurable
-without changing source files.
-"""
-
 import os
+
 from dotenv import load_dotenv
 
 # Load .env file if it exists (for local development)
@@ -38,6 +31,7 @@ class ScraperConfig:
     # Collections
     LISTINGS_COLLECTION: str = "listings"
     SCRAPER_RUNS_COLLECTION: str = "scraper_runs"
+             
 
 
 # Global config instance

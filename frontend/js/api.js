@@ -156,3 +156,213 @@ function truncate(text, maxLen = 120) {
     if (!text || text.length <= maxLen) return text || "";
     return text.substring(0, maxLen).trim() + "…";
 }
+
+// Helper for fetch that provides clear error messages on network failure
+async function safeFetch(url, options) {
+    try {
+        return await fetch(url, options);
+    } catch (err) {
+        if (err.name === "TypeError" || (err.message && err.message.includes("fetch"))) {
+            throw new Error(`Cannot connect to backend server at ${API_BASE}. Make sure the FastAPI backend is running.`);
+        }
+        throw err;
+    }
+}
+
+// ─── Student / Auth functions ──────────────────────────────
+// Same fetch + .ok-check pattern as the functions above.
+// NOTE: there's no session token here (matches the API's current
+// scope) - login just returns the student's profile including their
+// id, which we then hold onto in localStorage (see profile.js).
+
+/**
+ * Register a new student account.
+ *
+ * @param {Object} data - { name, email, password, skills, preferred_domain, preferred_location }
+ * @returns {Object} The created student's profile
+ * @throws {Error} with a readable message on validation/duplicate-email errors
+ */
+async function registerStudent(data) {
+    const response = await safeFetch(`${API_BASE}/students/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.detail || `Registration failed (${response.status})`);
+    }
+
+    return await response.json();
+}
+
+/**
+ * Log in a student.
+ *
+ * @param {string} email
+ * @param {string} password
+ * @returns {Object} The student's profile
+ * @throws {Error} with a readable message on invalid credentials
+ */
+async function loginStudent(email, password) {
+    const response = await safeFetch(`${API_BASE}/students/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.detail || `Login failed (${response.status})`);
+    }
+
+    return await response.json();
+}
+
+/**
+ * Fetch a student's profile by id.
+ *
+ * @param {string} studentId
+ * @returns {Object} Student profile
+ */
+async function fetchStudent(studentId) {
+    const response = await safeFetch(`${API_BASE}/students/${studentId}`);
+    if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const err = new Error(body?.detail || `API error: ${response.status}`);
+        err.status = response.status;
+        throw err;
+    }
+    return await response.json();
+}
+
+/**
+ * Update a student's profile (skills, domain, location).
+ *
+ * @param {string} studentId
+ * @param {Object} data - { skills, preferred_domain, preferred_location }
+ * @returns {Object} Updated student profile
+ */
+async function updateStudentProfile(studentId, data) {
+    const response = await safeFetch(`${API_BASE}/students/${studentId}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const err = new Error(body?.detail || `Update failed (${response.status})`);
+        err.status = response.status;
+        throw err;
+    }
+
+    return await response.json();
+}
+
+/**
+ * Recompute recommendations for a student.
+ *
+ * @param {string} studentId
+ * @returns {Object} { status, message, timestamp }
+ */
+async function recomputeRecommendations(studentId) {
+    const response = await safeFetch(`${API_BASE}/students/${studentId}/recompute`, {
+        method: "POST",
+    });
+
+    if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const err = new Error(body?.detail || `Recompute failed (${response.status})`);
+        err.status = response.status;
+        throw err;
+    }
+
+    return await response.json();
+}
+
+// ─── Global Sidebar User & Sign Out Handling ──────────────────────────────
+document.addEventListener("DOMContentLoaded", async function () {
+    let studentName = localStorage.getItem("skillsync-student-name");
+    let studentEmail = localStorage.getItem("skillsync-student-email");
+    const nameEl = document.getElementById("sidebar-user-name");
+    const avatarEl = document.getElementById("sidebar-user-avatar");
+    const emailEl = document.getElementById("sidebar-user-email");
+    const logoutBtn = document.getElementById("sidebar-logout-btn");
+
+    if (!studentName) {
+        try {
+            const current = await safeFetch(`${API_BASE}/students/current`);
+            if (current && current.name) {
+                studentName = current.name;
+                studentEmail = current.email;
+                localStorage.setItem("skillsync-student-name", current.name);
+                localStorage.setItem("skillsync-student-id", current.id);
+                if (current.email) localStorage.setItem("skillsync-student-email", current.email);
+                if (current.skills) localStorage.setItem("skillsync-student-skills", JSON.stringify(current.skills));
+            }
+        } catch (e) {
+            // Offline or no students registered
+        }
+    }
+
+    if (studentName && nameEl) {
+        nameEl.textContent = studentName.split(" ")[0] || studentName;
+        if (avatarEl) {
+            const initials = studentName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+            avatarEl.textContent = initials || "F";
+        }
+    }
+    if (studentEmail && emailEl) {
+        emailEl.textContent = studentEmail;
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            localStorage.removeItem("skillsync-student-id");
+            localStorage.removeItem("skillsync-student-name");
+            localStorage.removeItem("skillsync-student-email");
+            if (window.location.pathname.endsWith("profile.html")) {
+                if (typeof showAuthView === "function") {
+                    showAuthView();
+                } else {
+                    window.location.reload();
+                }
+            } else {
+                window.location.href = "profile.html";
+            }
+        });
+    }
+
+    // Global Notification Badges & Header Bell Navigation
+    updateGlobalNotificationBadges();
+});
+
+/**
+ * Synchronize unread notification badge across all pages.
+ */
+function updateGlobalNotificationBadges() {
+    const savedCount = localStorage.getItem("skillsync-unread-count");
+    const count = savedCount !== null ? parseInt(savedCount, 10) : 2;
+
+    const sidebarBadges = document.querySelectorAll(".nav-item .nav-badge, #sidebar-notif-badge");
+    sidebarBadges.forEach(b => {
+        b.textContent = count;
+        b.style.display = count > 0 ? "flex" : "none";
+    });
+
+    const headerBadges = document.querySelectorAll(".header-notification .badge, #header-notif-badge");
+    headerBadges.forEach(b => {
+        b.textContent = count;
+        b.style.display = count > 0 ? "flex" : "none";
+    });
+
+    // Wire all header notification bell buttons to navigate to notifications.html
+    document.querySelectorAll(".header-notification, #header-notification-btn").forEach(btn => {
+        btn.onclick = function () {
+            window.location.href = "notifications.html";
+        };
+    });
+}

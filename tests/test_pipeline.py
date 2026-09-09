@@ -128,4 +128,5 @@ class TestPipeline:
         assert listing["source"] == "test_source"
         assert listing["fingerprint"] != ""  # Should have a fingerprint
         assert listing["is_active"] is True
-        assert listing["skills"] == []  # Empty in Phase 1
+        assert isinstance(listing["skills"], list)
+        assert "python" in listing["skills"]

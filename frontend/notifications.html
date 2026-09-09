@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description"
-        content="SkillSync — AI-Driven Internship & Tech Event Discovery Platform. Dashboard showing matched opportunities.">
-    <title>SkillSync — Dashboard</title>
+    <meta name="description" content="SkillSync — Notifications. Real-time alerts on new matches, scraper syncs, deadlines, and skill gaps.">
+    <title>SkillSync — Notifications</title>
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,10 +16,9 @@
     <!-- Theme (load early to prevent flash) -->
     <script src="js/theme.js"></script>
 </head>
-
 <body>
     <div class="app-layout">
-
+        
         <!-- ═══════════ SIDEBAR ═══════════ -->
         <aside class="sidebar">
             <div class="sidebar-logo">
@@ -30,7 +27,7 @@
 
             <nav class="sidebar-nav">
                 <div class="sidebar-nav-top">
-                    <a href="index.html" class="nav-item active">
+                    <a href="index.html" class="nav-item">
                         <span class="nav-icon">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                         </span>
@@ -42,12 +39,12 @@
                         </span>
                         Discover
                     </a>
-                    <a href="notifications.html" class="nav-item">
+                    <a href="notifications.html" class="nav-item active">
                         <span class="nav-icon">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         </span>
                         Notifications
-                        <span class="nav-badge">2</span>
+                        <span class="nav-badge" id="sidebar-notif-badge">2</span>
                     </a>
                     <a href="profile.html" class="nav-item">
                         <span class="nav-icon">
@@ -86,18 +83,11 @@
             <header class="top-header">
                 <div class="search-container">
                     <span class="search-icon">🔍</span>
-                    <input type="text" class="search-input" id="header-search" placeholder="Search opportunities...">
+                    <input type="text" class="search-input" id="header-search" 
+                           placeholder="Search opportunities...">
                 </div>
 
-                <!-- Segmented Filter Pills -->
-                <div class="header-filter-pills" id="header-filter-pills">
-                    <button class="filter-pill active" data-filter="all">All</button>
-                    <button class="filter-pill" data-filter="matched">Matched</button>
-                    <button class="filter-pill" data-filter="near-miss">Near-miss</button>
-                </div>
-
-                <!-- Domain Filter Dropdown -->
-                <select class="header-domain-filter" id="header-domain">
+                <select class="header-domain-filter" id="header-domain" onchange="window.location.href='index.html'">
                     <option value="">All domains</option>
                     <option value="Web Development">Web Development</option>
                     <option value="AI">AI</option>
@@ -108,108 +98,48 @@
                 </select>
 
                 <!-- Notification Bell -->
-                <button class="header-notification" id="header-notification-btn" aria-label="Notifications"
-                    title="Notifications">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
+                <button class="header-notification" id="header-notification-btn" aria-label="Notifications" title="Notifications">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
-                    <span class="badge">2</span>
+                    <span class="badge" id="header-notif-badge">2</span>
                 </button>
             </header>
 
             <!-- Page Content -->
             <div class="page-content">
-
-                <!-- Greeting -->
-                <div class="page-greeting">
-                    <h1 id="dashboard-greeting">Good morning, Fatima 👋</h1>
-                    <p>Here's what's new and relevant for you.</p>
-                </div>
-
-                <!-- Stats Row -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-matched">5</div>
-                        <div class="stat-label">Matched</div>
-                        <div class="stat-desc">Strong skill fit</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-nearmiss">3</div>
-                        <div class="stat-label">Near-miss</div>
-                        <div class="stat-desc">Close to qualifying</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-new">3</div>
-                        <div class="stat-label">New this week</div>
-                        <div class="stat-desc">Added recently</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-applied">2</div>
-                        <div class="stat-label">Applied</div>
-                        <div class="stat-desc">In progress</div>
-                    </div>
-                </div>
-
-                <!-- Matched Opportunities Section -->
-                <section class="dashboard-section" id="section-matched">
-                    <div class="section-header-block">
-                        <h2 class="section-title">Matched opportunities</h2>
-                        <p class="section-subtitle">Based on your skills and interests</p>
-                    </div>
-                    <div class="opportunities-grid" id="matched-grid">
-                        <div class="loading-container">
-                            <div class="spinner"></div>
-                            <p>Loading matched opportunities...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Near-Miss Opportunities Section -->
-                <section class="dashboard-section" id="section-nearmiss">
-                    <div class="section-header-block">
-                        <h2 class="section-title">Near-miss opportunities</h2>
-                        <p class="section-subtitle">Almost there — a few skills away</p>
-                    </div>
-                    <div class="opportunities-grid" id="nearmiss-grid">
-                        <div class="loading-container">
-                            <div class="spinner"></div>
-                            <p>Loading near-miss opportunities...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Trending Among Students Like You Section -->
-                <section class="dashboard-section" id="section-trending">
-                    <div class="section-header-block section-header-with-link">
+                <div class="notifications-container">
+                    
+                    <!-- Notifications Header -->
+                    <div class="notifications-header">
                         <div>
-                            <h2 class="section-title">
-                                <span class="trending-icon">👥</span> Trending among students like you
-                            </h2>
-                            <p class="section-subtitle">Peer-based collaborative suggestions</p>
+                            <h1 class="notifications-title">Notifications</h1>
+                            <p class="notifications-subtitle"><span id="unread-count">2</span> unread</p>
                         </div>
-                        <a href="browse.html" class="explore-all-link">Explore all →</a>
+                        <button class="btn-mark-all-read" id="btn-mark-all-read">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Mark all read
+                        </button>
                     </div>
-                    <div class="trending-grid" id="trending-grid">
-                        <!-- Populated by JavaScript -->
-                    </div>
-                </section>
 
+                    <!-- Notifications List -->
+                    <div class="notifications-list" id="notifications-list">
+                        <div class="loading-container">
+                            <div class="spinner"></div>
+                            <p>Loading notifications...</p>
+                        </div>
+                    </div>
+
+                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- ═══════════ MODAL OVERLAY ═══════════ -->
-    <div class="modal-overlay" id="modal-overlay">
-        <div class="modal-dialog" id="modal-content">
-            <!-- Filled dynamically by JavaScript -->
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="js/api.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/notifications.js"></script>
 </body>
-
 </html>

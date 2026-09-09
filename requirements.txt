@@ -31,3 +31,7 @@ httpx==0.25.2
 
 # Utilities
 python-dotenv==1.0.0
+
+#student registration
+bcrypt==4.1.2
+pydantic[email]==2.5.2

@@ -1,29 +1,10 @@
-"""
-SkillSync - FastAPI Application (Main Entry Point)
-
-This is the main file for the API service. It:
-1. Creates the FastAPI application
-2. Registers all route handlers
-3. Connects to MongoDB on startup
-4. Disconnects from MongoDB on shutdown
-5. Adds CORS middleware (for future React frontend)
-6. Auto-generates Swagger/OpenAPI documentation at /docs
-
-Usage:
-    uvicorn api.main:app --reload
-    
-Or via Docker:
-    docker-compose up api
-    
-Then visit: http://localhost:8000/docs for Swagger UI
-"""
-
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.database import connect_to_mongodb, close_mongodb_connection
-from api.routes import listings, sources, health
+from api.database import close_mongodb_connection, connect_to_mongodb
+from api.routes import health, listings, notifications, sources, students
 
 
 # Lifespan context manager handles startup and shutdown events
@@ -57,7 +38,13 @@ app = FastAPI(
         "- `GET /listings/{id}` — Get a specific listing\n"
         "- `GET /sources` — View scraper sources and stats\n"
         "- `GET /health` — API health check\n"
-        "- `GET /scrape/status` — Scraper run status"
+        "- `GET /scrape/status` — Scraper run status\n"
+        "- `POST /students/register` — Register a new student\n"
+        "- `POST /students/login` — Log in a student\n"
+        "- `GET /students/{id}` — Get a student's profile\n"
+        "- `PUT /students/{id}/profile` — Update a student's full profile\n"
+        "- `PUT /students/{id}/skills` — Update a student's skill list\n"
+        "- `PUT /students/{id}/preferences` — Update a student's preferences"
     ),
     version="0.1.0",
     lifespan=lifespan,
@@ -76,9 +63,11 @@ app.add_middleware(
 
 # Register route handlers
 # Each router handles a group of related endpoints
-app.include_router(listings.router)   # /listings, /listings/{id}
-app.include_router(sources.router)    # /sources
-app.include_router(health.router)     # /health, /scrape/status
+app.include_router(listings.router)        # /listings, /listings/{id}
+app.include_router(sources.router)         # /sources
+app.include_router(health.router)          # /health, /scrape/status
+app.include_router(students.router)        # /students/register, /students/login, etc.
+app.include_router(notifications.router)   # /notifications
 
 
 # Root endpoint — a simple welcome message

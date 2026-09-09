@@ -1,140 +1,145 @@
-"""
-SkillSync - Mustakbil.com Scraper (BeautifulSoup)
-
-Mustakbil.com is a Pakistani job portal. This scraper uses:
-- requests: to download the HTML page
-- BeautifulSoup: to parse the HTML and extract job data
-
-This is a STATIC scraper — the page content is in the HTML source,
-no JavaScript rendering needed (unlike Selenium scrapers).
-
-NOTE: CSS selectors may need updating if the website changes its layout.
-      Look for comments marked "SELECTOR:" to find what to update.
-"""
-
-from typing import List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 import requests
-from bs4 import BeautifulSoup
 
 from scrapers.spiders.base import BaseScraper
-from scrapers.utils import get_requests_headers, random_delay, clean_text
+from scrapers.utils import clean_text, get_requests_headers, random_delay
 
 
 class MustakbilScraper(BaseScraper):
-    """Scraper for Mustakbil.com internship listings."""
-    
-    # Base URL for internship listings on Mustakbil
-    BASE_URL = "https://www.mustakbil.com/jobs?search=internship&page={page}"
-    
-    # How many pages to scrape per run
-    MAX_PAGES = 3
-    
+    """Scraper for Mustakbil.com internship/job listings via their JSON API."""
+
+    API_URL = "https://api-public.mustakbil.com/ws/jobs/search/"
+    COUNTRY_ID = 162  # Pakistan
+
+    # Safety cap in case the API's hasMore flag ever misbehaves -
+    # normally we stop as soon as hasMore is False.
+    MAX_PAGES = 10
+
     def __init__(self):
         super().__init__(name="mustakbil")
-    
+
     def scrape(self) -> List[Dict[str, Any]]:
         """
-        Scrape internship listings from Mustakbil.com.
-        
-        Iterates through multiple pages of search results,
-        extracting job details from each listing card.
-        
+        Page through Mustakbil's job search API and return raw listings.
+
         Returns:
             List of raw listing dictionaries
         """
         all_listings = []
-        
-        for page_num in range(1, self.MAX_PAGES + 1):
-            self.logger.info(f"Scraping page {page_num} of {self.MAX_PAGES}")
-            
-            url = self.BASE_URL.format(page=page_num)
-            
+        page = 1
+
+        while page <= self.MAX_PAGES:
+            self.logger.info(f"Fetching page {page}")
+
             try:
-                # Send HTTP request with rotating User-Agent
-                response = requests.get(url, headers=get_requests_headers(), timeout=15)
-                response.raise_for_status()  # Raise error for 4xx/5xx status codes
-                
-                # Parse the HTML content
-                soup = BeautifulSoup(response.text, "lxml")
-                
-                # SELECTOR: Find all job listing cards on the page
-                # Update this selector if Mustakbil changes their HTML structure
-                job_cards = soup.select("div.job-listing, div.job-card, article.job")
-                
-                if not job_cards:
-                    # Try alternative selectors
-                    job_cards = soup.select("div[class*='job'], div[class*='listing']")
-                
-                if not job_cards:
-                    self.logger.warning(f"No job cards found on page {page_num}. "
-                                        "The website layout may have changed.")
-                    continue
-                
-                # Extract data from each job card
-                for card in job_cards:
-                    listing = self._parse_card(card)
-                    if listing:
-                        all_listings.append(listing)
-                
-                self.logger.info(f"Page {page_num}: found {len(job_cards)} listings")
-                
+                response = requests.get(
+                    self.API_URL,
+                    params={"countryid": self.COUNTRY_ID, "page": page},
+                    headers=get_requests_headers(),
+                    timeout=15,
+                )
+                response.raise_for_status()
+
+            except requests.exceptions.HTTPError:
+                if response.status_code == 429:
+                    self.logger.warning("Rate limited. Waiting 10s before retry...")
+                    random_delay(10, 12)
+                    continue  # retry same page, don't increment
+                self.logger.error(f"HTTP error on page {page}: {response.status_code}")
+                break
+
             except requests.RequestException as e:
-                self.logger.error(f"Failed to fetch page {page_num}: {str(e)}")
-            
-            # Be polite - wait between page requests
-            random_delay(1.5, 3.0)
-        
+                self.logger.error(f"Failed to fetch page {page}: {str(e)}")
+                break
+
+            api_data = response.json()
+            jobs = api_data.get("list", [])
+
+            if not jobs:
+                self.logger.info(f"No jobs on page {page}. Stopping.")
+                break
+
+            for job in jobs:
+                listing = self._parse_job(job)
+                if listing:
+                    all_listings.append(listing)
+
+            self.logger.info(f"Page {page}: found {len(jobs)} listings")
+
+            if not api_data.get("hasMore", False):
+                break
+
+            random_delay(1.0, 2.0)  # be polite between pages
+            page += 1
+
         return all_listings
-    
-    def _parse_card(self, card: BeautifulSoup) -> Dict[str, Any] | None:
+
+    def _parse_job(self, job: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
-        Extract listing data from a single job card HTML element.
-        
+        Map a raw API job object to our standard listing dict.
+
         Args:
-            card: BeautifulSoup element for one job card
-            
+            job: One job object from the API's "list" array
+
         Returns:
-            Dictionary with listing data, or None if parsing failed
+            Dictionary with listing data, or None if a required field is missing
         """
         try:
-            # SELECTOR: Job title - usually in an <a> or <h2> tag
-            title_elem = card.select_one("h2 a, h3 a, a.job-title, a[class*='title']")
-            if not title_elem:
+            job_id = job.get("id")
+            title = clean_text(job.get("title", ""))
+
+            if not job_id or not title:
                 return None
-            
-            title = clean_text(title_elem.get_text())
-            
-            # SELECTOR: Job URL
-            source_url = title_elem.get("href", "")
-            if source_url and not source_url.startswith("http"):
-                source_url = "https://www.mustakbil.com" + source_url
-            
-            # SELECTOR: Company name
-            company_elem = card.select_one("span.company, div.company-name, "
-                                            "a[class*='company']")
-            company = clean_text(company_elem.get_text()) if company_elem else None
-            
-            # SELECTOR: Location
-            location_elem = card.select_one("span.location, div.job-location, "
-                                             "span[class*='location']")
-            location = clean_text(location_elem.get_text()) if location_elem else None
-            
-            # SELECTOR: Description/summary
-            desc_elem = card.select_one("p.description, div.job-description, "
-                                         "p[class*='desc']")
-            description = clean_text(desc_elem.get_text()) if desc_elem else ""
-            
+
+            # The API has no dedicated "remote" city string - telecommute
+            # is a separate boolean, so build a readable location from it.
+            if job.get("telecommute"):
+                location = "Remote"
+            else:
+                location = clean_text(job.get("city") or job.get("cities") or "") or None
+
             return {
                 "title": title,
-                "source_url": source_url,
-                "description_raw": description,
-                "company": company,
+                "source_url": f"https://www.mustakbil.com/jobs/job/{job_id}",
+                "description_raw": clean_text(job.get("description", "")),
+                "company": clean_text(job.get("company", "")) or None,
                 "location": location,
-                "posted_date": None,  # Parse if available on the page
-                "deadline": None,
+                "posted_date": self._parse_api_datetime(job.get("postedOn")),
+                "deadline": self._parse_api_datetime(job.get("lastDate")),
             }
-            
+
         except Exception as e:
-            self.logger.warning(f"Failed to parse a job card: {str(e)}")
+            self.logger.warning(f"Failed to parse a job entry: {str(e)}")
+            return None
+
+    @staticmethod
+    def _parse_api_datetime(value: Optional[str]) -> Optional[datetime]:
+        """
+        Parse Mustakbil's timestamp format into a datetime.
+
+        The API returns timestamps like "2026-08-24T23:45:29.0780520Z" -
+        7 fractional-second digits plus a trailing "Z". Python's
+        datetime.fromisoformat only accepts up to 6 fractional digits,
+        so the extra digit has to be trimmed before parsing, and the
+        trailing "Z" needs to be stripped since older/base fromisoformat
+        implementations don't handle it directly.
+
+        Args:
+            value: Raw timestamp string from the API, or None
+
+        Returns:
+            Parsed datetime, or None if value is missing/unparseable
+        """
+        if not value:
+            return None
+
+        try:
+            cleaned = value.rstrip("Z")
+            if "." in cleaned:
+                whole, frac = cleaned.split(".", 1)
+                cleaned = f"{whole}.{frac[:6]}"  # truncate to microseconds
+            return datetime.fromisoformat(cleaned)
+        except (ValueError, AttributeError):
             return None
