@@ -45,7 +45,13 @@ function saveSession(studentId, name, email) {
     localStorage.setItem(STUDENT_KEY, studentId);
     if (name) localStorage.setItem(STUDENT_NAME_KEY, name);
     if (email) localStorage.setItem("skillsync-student-email", email);
+    localStorage.removeItem("skillsync_guest");
     currentStudentId = studentId;
+    document.documentElement.classList.remove("is-guest");
+    document.body.classList.remove("is-guest");
+    if (typeof updateGlobalNotificationBadges === "function") {
+        updateGlobalNotificationBadges();
+    }
 }
 
 function getSession() {
@@ -57,9 +63,15 @@ function clearSession() {
     localStorage.removeItem(STUDENT_NAME_KEY);
     localStorage.removeItem("skillsync-student-email");
     localStorage.removeItem("skillsync-student-skills");
+    localStorage.setItem("skillsync_guest", "true");
     currentStudentId = null;
+    document.documentElement.classList.add("is-guest");
+    document.body.classList.add("is-guest");
     document.documentElement.classList.add("auth-mode");
     document.body.classList.add("auth-mode");
+    if (typeof updateGlobalNotificationBadges === "function") {
+        updateGlobalNotificationBadges();
+    }
 }
 
 // ─── Toast Notifications ──────────────────────────────
@@ -84,7 +96,10 @@ function showAuthMessage(text, type = "error") {
     const container = document.getElementById("auth-message");
     if (!container) return;
     const cssClass = type === "error" ? "form-error" : "form-success";
-    container.innerHTML = `<div class="${cssClass}">${text}</div>`;
+    const icon = type === "error"
+        ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+        : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+    container.innerHTML = `<div class="${cssClass}">${icon}<span>${escapeHtml(text)}</span></div>`;
 }
 
 // ─── Tab Switching (Login / Register) ──────────────────────────────
@@ -96,6 +111,7 @@ function switchTab(tab) {
     const registerTab = document.getElementById("tab-register");
     const msg = document.getElementById("auth-message");
     if (msg) msg.innerHTML = "";
+    document.querySelectorAll(".form-input.is-invalid").forEach(el => el.classList.remove("is-invalid"));
 
     if (tab === "login") {
         loginForm.style.display = "block";
@@ -618,15 +634,95 @@ document.addEventListener("DOMContentLoaded", () => {
     // Register Form Submit
     document.getElementById("register-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
+
+        // Clear previous messages and invalid styling
+        const authMsg = document.getElementById("auth-message");
+        if (authMsg) authMsg.innerHTML = "";
+        document.querySelectorAll("#register-form .form-input.is-invalid").forEach(el => el.classList.remove("is-invalid"));
+
+        const firstNameInput = document.getElementById("register-firstname");
+        const lastNameInput = document.getElementById("register-lastname");
+        const emailInput = document.getElementById("register-email");
+        const passwordInput = document.getElementById("register-password");
+        const confirmPasswordInput = document.getElementById("register-confirm-password");
+
+        const firstName = firstNameInput?.value.trim() || "";
+        const lastName = lastNameInput?.value.trim() || "";
+        const email = emailInput?.value.trim() || "";
+        const password = passwordInput?.value || "";
+        const confirmPassword = confirmPasswordInput?.value || "";
+
+        // 1. Compulsory Validation: First Name
+        if (!firstName) {
+            firstNameInput?.classList.add("is-invalid");
+            showAuthMessage("First name is compulsory. Please enter your first name.", "error");
+            firstNameInput?.focus();
+            return;
+        }
+
+        // 2. Compulsory Validation: Last Name
+        if (!lastName) {
+            lastNameInput?.classList.add("is-invalid");
+            showAuthMessage("Last name is compulsory. Please enter your last name.", "error");
+            lastNameInput?.focus();
+            return;
+        }
+
+        // 3. Compulsory Validation: Email
+        if (!email) {
+            emailInput?.classList.add("is-invalid");
+            showAuthMessage("Email is compulsory. Please enter your email address.", "error");
+            emailInput?.focus();
+            return;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            emailInput?.classList.add("is-invalid");
+            showAuthMessage("Please enter a valid email address.", "error");
+            emailInput?.focus();
+            return;
+        }
+
+        // 4. Compulsory Validation: Password
+        if (!password) {
+            passwordInput?.classList.add("is-invalid");
+            showAuthMessage("Password is compulsory. Please enter a password.", "error");
+            passwordInput?.focus();
+            return;
+        }
+        if (password.length < 8) {
+            passwordInput?.classList.add("is-invalid");
+            showAuthMessage("Password must be at least 8 characters long.", "error");
+            passwordInput?.focus();
+            return;
+        }
+
+        // 5. Compulsory Validation: Re-enter Password
+        if (!confirmPassword) {
+            confirmPasswordInput?.classList.add("is-invalid");
+            showAuthMessage("Please re-enter your password to confirm.", "error");
+            confirmPasswordInput?.focus();
+            return;
+        }
+        if (password !== confirmPassword) {
+            confirmPasswordInput?.classList.add("is-invalid");
+            showAuthMessage("Passwords do not match. Please verify and re-enter identical passwords.", "error");
+            confirmPasswordInput?.focus();
+            return;
+        }
+
         const submitBtn = document.getElementById("register-submit");
         submitBtn.disabled = true;
         submitBtn.textContent = "Creating account...";
 
         try {
+            const fullName = `${firstName} ${lastName}`.trim();
             const data = {
-                name: document.getElementById("register-name").value,
-                email: document.getElementById("register-email").value,
-                password: document.getElementById("register-password").value,
+                name: fullName,
+                first_name: firstName,
+                last_name: lastName,
+                email: email,
+                password: password,
                 skills: DEFAULT_SKILLS,
                 university: "NUST — National University of Sciences and Technology",
                 field_of_study: "Computer Science",
@@ -644,11 +740,28 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Clear is-invalid styling as user types into any register field
+    ["register-firstname", "register-lastname", "register-email", "register-password", "register-confirm-password"].forEach(id => {
+        const el = document.getElementById(id);
+        el?.addEventListener("input", () => {
+            el.classList.remove("is-invalid");
+            const authMsg = document.getElementById("auth-message");
+            if (authMsg && authMsg.querySelector(".form-error")) {
+                authMsg.innerHTML = "";
+            }
+        });
+    });
+
     // Sidebar sign out button
     document.getElementById("sidebar-logout-btn")?.addEventListener("click", (e) => {
         e.preventDefault();
         clearSession();
         showAuthView();
+    });
+
+    // Explore as guest link
+    document.getElementById("auth-guest-link")?.addEventListener("click", () => {
+        clearSession();
     });
 
     loadCurrentStudent();

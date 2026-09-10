@@ -23,9 +23,18 @@ router = APIRouter(prefix="/students", tags=["Students"])
 def _student_to_response(doc: dict) -> StudentResponse:
     """Map a MongoDB student document to the public-facing response model.
     Deliberately excludes password_hash - that field never leaves this file."""
+    first_name = doc.get("first_name")
+    last_name = doc.get("last_name")
+    if not first_name and doc.get("name"):
+        parts = doc["name"].strip().split(" ", 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+
     return StudentResponse(
         id=str(doc["_id"]),
         name=doc.get("name", ""),
+        first_name=first_name,
+        last_name=last_name,
         email=doc.get("email", ""),
         skills=doc.get("skills", []),
         preferred_domain=doc.get("preferred_domain"),
@@ -59,8 +68,17 @@ async def register_student(payload: StudentRegister):
     if existing:
         raise HTTPException(status_code=409, detail="An account with this email already exists")
 
+    first_name = payload.first_name
+    last_name = payload.last_name
+    if not first_name and payload.name:
+        parts = payload.name.strip().split(" ", 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+
     student_doc = {
         "name": payload.name,
+        "first_name": first_name,
+        "last_name": last_name,
         "email": payload.email.lower(),
         "password_hash": hash_password(payload.password),
         "skills": payload.skills,
@@ -143,16 +161,24 @@ async def update_student_profile(student_id: str, payload: StudentProfileUpdate)
     db = get_database()
     collection = db[config.STUDENTS_COLLECTION]
 
+    update_data = {
+        "skills": payload.skills,
+        "preferred_domain": payload.preferred_domain,
+        "preferred_location": payload.preferred_location,
+        "university": payload.university,
+        "field_of_study": payload.field_of_study,
+        "domain_interests": payload.domain_interests,
+    }
+    if payload.name is not None:
+        update_data["name"] = payload.name
+    if payload.first_name is not None:
+        update_data["first_name"] = payload.first_name
+    if payload.last_name is not None:
+        update_data["last_name"] = payload.last_name
+
     result = await collection.find_one_and_update(
         {"_id": _object_id_or_404(student_id)},
-        {"$set": {
-            "skills": payload.skills,
-            "preferred_domain": payload.preferred_domain,
-            "preferred_location": payload.preferred_location,
-            "university": payload.university,
-            "field_of_study": payload.field_of_study,
-            "domain_interests": payload.domain_interests,
-        }},
+        {"$set": update_data},
         return_document=ReturnDocument.AFTER,
     )
 

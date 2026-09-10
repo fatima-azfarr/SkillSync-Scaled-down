@@ -28,6 +28,7 @@ async function fetchListings(filters = {}) {
     if (filters.source) params.append("source", filters.source);
     if (filters.keyword) params.append("keyword", filters.keyword);
     if (filters.domain) params.append("domain", filters.domain);
+    if (filters.active_only !== undefined) params.append("active_only", filters.active_only);
     params.append("page", filters.page || 1);
     params.append("page_size", filters.page_size || 20);
 
@@ -284,56 +285,85 @@ async function recomputeRecommendations(studentId) {
 
 // ─── Global Sidebar User & Sign Out Handling ──────────────────────────────
 document.addEventListener("DOMContentLoaded", async function () {
-    let studentName = localStorage.getItem("skillsync-student-name");
-    let studentEmail = localStorage.getItem("skillsync-student-email");
+    const urlParams = new URLSearchParams(window.location.search);
+    const isGuestParam = urlParams.get("guest") === "true";
+    if (isGuestParam) {
+        localStorage.setItem("skillsync_guest", "true");
+        localStorage.removeItem("skillsync-student-id");
+        localStorage.removeItem("skillsync-student-name");
+        localStorage.removeItem("skillsync-student-email");
+        localStorage.removeItem("skillsync-student-skills");
+    }
+
+    const isGuest = localStorage.getItem("skillsync_guest") === "true" || !localStorage.getItem("skillsync-student-id");
+    if (isGuest) {
+        document.documentElement.classList.add("is-guest");
+        document.body.classList.add("is-guest");
+    } else {
+        document.documentElement.classList.remove("is-guest");
+        document.body.classList.remove("is-guest");
+    }
+
     const nameEl = document.getElementById("sidebar-user-name");
     const avatarEl = document.getElementById("sidebar-user-avatar");
     const emailEl = document.getElementById("sidebar-user-email");
     const logoutBtn = document.getElementById("sidebar-logout-btn");
 
-    if (!studentName) {
-        try {
-            const current = await safeFetch(`${API_BASE}/students/current`);
-            if (current && current.name) {
-                studentName = current.name;
-                studentEmail = current.email;
-                localStorage.setItem("skillsync-student-name", current.name);
-                localStorage.setItem("skillsync-student-id", current.id);
-                if (current.email) localStorage.setItem("skillsync-student-email", current.email);
-                if (current.skills) localStorage.setItem("skillsync-student-skills", JSON.stringify(current.skills));
-            }
-        } catch (e) {
-            // Offline or no students registered
-        }
-    }
-
-    if (studentName && nameEl) {
-        nameEl.textContent = studentName.split(" ")[0] || studentName;
-        if (avatarEl) {
-            const initials = studentName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
-            avatarEl.textContent = initials || "F";
-        }
-    }
-    if (studentEmail && emailEl) {
-        emailEl.textContent = studentEmail;
-    }
-
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", function (e) {
-            e.preventDefault();
-            localStorage.removeItem("skillsync-student-id");
-            localStorage.removeItem("skillsync-student-name");
-            localStorage.removeItem("skillsync-student-email");
-            if (window.location.pathname.endsWith("profile.html")) {
-                if (typeof showAuthView === "function") {
-                    showAuthView();
-                } else {
-                    window.location.reload();
-                }
-            } else {
+    if (isGuest) {
+        if (nameEl) nameEl.textContent = "Guest";
+        if (avatarEl) avatarEl.textContent = "G";
+        if (emailEl) emailEl.textContent = "Explore mode";
+        if (logoutBtn) {
+            logoutBtn.innerHTML = `
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                <span>Log in / Register</span>
+            `;
+            logoutBtn.addEventListener("click", function (e) {
+                e.preventDefault();
                 window.location.href = "profile.html";
+            });
+        }
+    } else {
+        let studentName = localStorage.getItem("skillsync-student-name");
+        let studentEmail = localStorage.getItem("skillsync-student-email");
+
+        if (studentName && nameEl) {
+            nameEl.textContent = studentName.split(" ")[0] || studentName;
+            if (avatarEl) {
+                const initials = studentName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+                avatarEl.textContent = initials || "S";
             }
-        });
+        }
+        if (studentEmail && emailEl) {
+            emailEl.textContent = studentEmail;
+        }
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                localStorage.setItem("skillsync_guest", "true");
+                localStorage.removeItem("skillsync-student-id");
+                localStorage.removeItem("skillsync-student-name");
+                localStorage.removeItem("skillsync-student-email");
+                localStorage.removeItem("skillsync-student-skills");
+                document.documentElement.classList.add("is-guest");
+                document.body.classList.add("is-guest");
+                updateGlobalNotificationBadges();
+                if (window.location.pathname.endsWith("profile.html")) {
+                    if (typeof showAuthView === "function") {
+                        showAuthView();
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    window.location.href = "profile.html";
+                }
+            });
+        }
     }
 
     // Global Notification Badges & Header Bell Navigation
@@ -342,27 +372,120 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 /**
  * Synchronize unread notification badge across all pages.
+ * Suppressed completely for guests.
  */
 function updateGlobalNotificationBadges() {
+    const isGuest = localStorage.getItem("skillsync_guest") === "true" || !localStorage.getItem("skillsync-student-id");
+
+    const sidebarNotifItems = document.querySelectorAll('a.nav-item[href*="notifications.html"]');
+    const headerNotifBtns = document.querySelectorAll(".header-notification, #header-notification-btn");
+    const sidebarBadges = document.querySelectorAll(".nav-item .nav-badge, #sidebar-notif-badge");
+    const headerBadges = document.querySelectorAll(".header-notification .badge, #header-notif-badge");
+
+    if (isGuest) {
+        document.documentElement.classList.add("is-guest");
+        document.body.classList.add("is-guest");
+        sidebarNotifItems.forEach(el => el.style.display = "none");
+        headerNotifBtns.forEach(el => el.style.display = "none");
+        sidebarBadges.forEach(b => b.style.display = "none");
+        headerBadges.forEach(b => b.style.display = "none");
+        return;
+    }
+
+    document.documentElement.classList.remove("is-guest");
+    document.body.classList.remove("is-guest");
+    sidebarNotifItems.forEach(el => el.style.display = "");
+    headerNotifBtns.forEach(el => el.style.display = "");
+
     const savedCount = localStorage.getItem("skillsync-unread-count");
     const count = savedCount !== null ? parseInt(savedCount, 10) : 2;
 
-    const sidebarBadges = document.querySelectorAll(".nav-item .nav-badge, #sidebar-notif-badge");
     sidebarBadges.forEach(b => {
         b.textContent = count;
         b.style.display = count > 0 ? "flex" : "none";
     });
 
-    const headerBadges = document.querySelectorAll(".header-notification .badge, #header-notif-badge");
     headerBadges.forEach(b => {
         b.textContent = count;
         b.style.display = count > 0 ? "flex" : "none";
     });
 
     // Wire all header notification bell buttons to navigate to notifications.html
-    document.querySelectorAll(".header-notification, #header-notification-btn").forEach(btn => {
+    headerNotifBtns.forEach(btn => {
         btn.onclick = function () {
             window.location.href = "notifications.html";
         };
     });
+}
+
+/**
+ * Compute dynamic deadline status and badge info from listing deadline or date.
+ *
+ * @param {string|Date|null} deadline - The application deadline.
+ * @param {string|Date|null} postedOrScraped - Fallback date if deadline is null.
+ * @returns {object} { daysLeft, label, isExpired, isUrgent, badgeClass }
+ */
+function computeDeadlineInfo(deadline, postedOrScraped) {
+    if (!deadline) {
+        // Rolling / Active opportunity without hard deadline (e.g. Remotive)
+        return {
+            daysLeft: null,
+            label: "Rolling / Active",
+            isExpired: false,
+            isUrgent: false,
+            badgeClass: "rolling"
+        };
+    }
+
+    const deadlineDate = new Date(deadline);
+    if (isNaN(deadlineDate.getTime())) {
+        return {
+            daysLeft: null,
+            label: "Active",
+            isExpired: false,
+            isUrgent: false,
+            badgeClass: "active"
+        };
+    }
+
+    const now = new Date();
+    // Normalize to midnight for accurate whole-day difference
+    const dMidnight = new Date(deadlineDate.getFullYear(), deadlineDate.getMonth(), deadlineDate.getDate());
+    const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffMs = dMidnight - nowMidnight;
+    const daysLeft = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    if (daysLeft < 0) {
+        return {
+            daysLeft,
+            label: "Expired",
+            isExpired: true,
+            isUrgent: false,
+            badgeClass: "expired"
+        };
+    } else if (daysLeft === 0) {
+        return {
+            daysLeft: 0,
+            label: "Today (Closing soon)",
+            isExpired: false,
+            isUrgent: true,
+            badgeClass: "urgent"
+        };
+    } else if (daysLeft <= 5) {
+        return {
+            daysLeft,
+            label: `${daysLeft}d left`,
+            isExpired: false,
+            isUrgent: true,
+            badgeClass: "urgent"
+        };
+    } else {
+        return {
+            daysLeft,
+            label: `${daysLeft}d left`,
+            isExpired: false,
+            isUrgent: false,
+            badgeClass: "active"
+        };
+    }
 }

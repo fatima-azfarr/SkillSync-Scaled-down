@@ -76,6 +76,8 @@ class HealthResponse(BaseModel):
 class StudentRegister(BaseModel):
     """Request body for POST /students/register."""
     name: str = Field(..., min_length=1, description="Student's full name")
+    first_name: Optional[str] = Field(default=None, description="Student's first name")
+    last_name: Optional[str] = Field(default=None, description="Student's last name")
     email: EmailStr = Field(..., description="Student's email - must be unique")
     password: str = Field(..., min_length=8,
                            description="Plaintext password (min 8 chars) - hashed before storage")
@@ -106,6 +108,9 @@ class StudentPreferencesUpdate(BaseModel):
 
 class StudentProfileUpdate(BaseModel):
     """Request body for PUT /students/{id}/profile."""
+    name: Optional[str] = Field(default=None, description="Full name")
+    first_name: Optional[str] = Field(default=None, description="First name")
+    last_name: Optional[str] = Field(default=None, description="Last name")
     skills: List[str] = Field(default_factory=list, description="Full replacement skill list")
     preferred_domain: Optional[str] = Field(default=None, description="e.g. 'web development'")
     preferred_location: Optional[str] = Field(default=None, description="Preferred location, or 'Remote'")
@@ -118,6 +123,8 @@ class StudentResponse(BaseModel):
     """What the API returns for a student - never includes password_hash."""
     id: str
     name: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     email: EmailStr
     skills: List[str]
     preferred_domain: Optional[str] = None

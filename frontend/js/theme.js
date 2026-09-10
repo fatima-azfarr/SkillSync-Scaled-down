@@ -56,8 +56,31 @@
     // Apply saved theme immediately on load
     applyTheme(getSavedTheme());
 
+    // Immediate guest mode check to prevent notification / UI flash
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("guest") === "true") {
+            localStorage.setItem("skillsync_guest", "true");
+        }
+        const isGuest = localStorage.getItem("skillsync_guest") === "true" || !localStorage.getItem("skillsync-student-id");
+        if (isGuest) {
+            document.documentElement.classList.add("is-guest");
+        } else {
+            document.documentElement.classList.remove("is-guest");
+        }
+    } catch (e) {}
+
     // Set up click handler once DOM is ready
     document.addEventListener("DOMContentLoaded", function() {
+        const isGuest = localStorage.getItem("skillsync_guest") === "true" || !localStorage.getItem("skillsync-student-id");
+        if (isGuest) {
+            document.documentElement.classList.add("is-guest");
+            if (document.body) document.body.classList.add("is-guest");
+        } else {
+            document.documentElement.classList.remove("is-guest");
+            if (document.body) document.body.classList.remove("is-guest");
+        }
+
         // Re-apply to make sure button text is updated
         applyTheme(getSavedTheme());
 

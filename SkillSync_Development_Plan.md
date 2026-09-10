@@ -113,10 +113,11 @@
 - Provides unread count metrics and individual read status toggles.
 
 ### Module 6: Web Application & Design System
-- **Dashboard (`index.html`)**: Time-of-day greeting, real-time match counters, segmented filter pills (`All`, `Matched`, `Near-miss`), domain filter, and opportunity cards.
+- **Dashboard (`index.html`)**: Time-of-day greeting (personalized for student or welcoming for guest), real-time match counters, segmented filter pills (`All`, `Matched`, `Near-miss`), domain filter, opportunity cards (personalized matches for students; all general listings across platforms for guests), and guest banner.
 - **Discover (`browse.html`)**: Live keyword search, platform source filter tabs, sanitized descriptions, and detail modals.
 - **Notifications (`notifications.html`)**: Comprehensive sync activity stream with filter tabs (`All`, `Scraper Sync`, `Matches`) and quick actions.
-- **Profile & Skills (`profile.html`)**: Interactive education inputs with SVG icons, skill pills management with suggestions, and Recompute recommendations card + modal.
+- **Profile & Skills (`profile.html`)**: Clean standalone auth view for login & registration (hiding side menu), interactive education inputs with SVG icons, skill pills management with suggestions, and Recompute recommendations card + modal.
+- **Registration Form**: 5 compulsory fields in order (First Name, Last Name, Email, Password, Re-enter Password) with client-side validation and password match checks.
 - **Scraper Sources (`sources.html`)**: Platform health, active listing counts, and sync history.
 - **Unified SVG Vector Icons**: Standardized 18×18 and 16×16 stroke icons across the entire interface.
 - **Dark/Light Mode**: Smooth, persistent theme switching.
@@ -150,6 +151,8 @@
 {
   "_id": "ObjectId",
   "name": "String",
+  "first_name": "String",
+  "last_name": "String",
   "email": "String (unique index)",
   "password_hash": "String",
   "university": "String",
@@ -158,8 +161,7 @@
   "domain_interests": ["String"],
   "preferred_domain": "String",
   "preferred_location": "String",
-  "created_at": "ISODate",
-  "updated_at": "ISODate"
+  "created_at": "ISODate"
 }
 ```
 

@@ -17,7 +17,7 @@ const DEFAULT_STUDENT_SKILLS = [
     "HTML", "Node.js", "Pandas"
 ];
 
-// Canonical curated dataset matching the design screenshots
+// Canonical curated dataset matching the design screenshots with active upcoming deadlines
 const CANONICAL_MATCHED_OPPORTUNITIES = [
     {
         id: "curated-matched-1",
@@ -27,8 +27,9 @@ const CANONICAL_MATCHED_OPPORTUNITIES = [
         category: "Internship",
         domain: "Web Development",
         location: "Remote",
-        deadlineDays: -25,
-        deadlineFormatted: "Aug 15, 2026",
+        deadlineDays: 14,
+        deadlineFormatted: "14d left",
+        deadlineInfo: { daysLeft: 14, label: "14d left", isExpired: false, isUrgent: false, badgeClass: "active" },
         matchScore: 92,
         skills: ["React", "TypeScript", "CSS", "Git", "REST APIs"],
         apply_url: "https://www.rozee.pk",
@@ -42,8 +43,9 @@ const CANONICAL_MATCHED_OPPORTUNITIES = [
         category: "Hackathon",
         domain: "Open Source",
         location: "Remote",
-        deadlineDays: -39,
-        deadlineFormatted: "Jul 28, 2026",
+        deadlineDays: 21,
+        deadlineFormatted: "21d left",
+        deadlineInfo: { daysLeft: 21, label: "21d left", isExpired: false, isUrgent: false, badgeClass: "active" },
         matchScore: 85,
         skills: ["Git", "Python", "Open Source", "TypeScript"],
         apply_url: "https://fellowship.mlh.io",
@@ -57,8 +59,9 @@ const CANONICAL_MATCHED_OPPORTUNITIES = [
         category: "Internship",
         domain: "NLP",
         location: "Cairo, Egypt",
-        deadlineDays: -43,
-        deadlineFormatted: "Jul 24, 2026",
+        deadlineDays: 18,
+        deadlineFormatted: "18d left",
+        deadlineInfo: { daysLeft: 18, label: "18d left", isExpired: false, isUrgent: false, badgeClass: "active" },
         matchScore: 78,
         skills: ["Python", "NLP", "Pandas", "SQL"],
         apply_url: "https://wuzzuf.net",
@@ -74,6 +77,7 @@ const CANONICAL_MATCHED_OPPORTUNITIES = [
         location: "Cambridge, MA",
         deadlineDays: 0,
         deadlineFormatted: "Today",
+        deadlineInfo: { daysLeft: 0, label: "Today (Closing soon)", isExpired: false, isUrgent: true, badgeClass: "urgent" },
         matchScore: 82,
         skills: ["Python", "JavaScript", "React"],
         apply_url: "https://hackmit.org",
@@ -87,8 +91,9 @@ const CANONICAL_MATCHED_OPPORTUNITIES = [
         category: "Event",
         domain: "Open Source",
         location: "Remote",
-        deadlineDays: -15,
-        deadlineFormatted: "Aug 25, 2026",
+        deadlineDays: 28,
+        deadlineFormatted: "28d left",
+        deadlineInfo: { daysLeft: 28, label: "28d left", isExpired: false, isUrgent: false, badgeClass: "active" },
         matchScore: 75,
         skills: ["Git", "Python", "Open Source"],
         apply_url: "https://summerofcode.withgoogle.com",
@@ -105,8 +110,9 @@ const CANONICAL_NEARMISS_OPPORTUNITIES = [
         category: "Internship",
         domain: "Web Development",
         location: "Lahore, Pakistan",
-        deadlineDays: -20,
-        deadlineFormatted: "Aug 20, 2026",
+        deadlineDays: 12,
+        deadlineFormatted: "12d left",
+        deadlineInfo: { daysLeft: 12, label: "12d left", isExpired: false, isUrgent: false, badgeClass: "active" },
         matchScore: 61,
         skills: ["Python", "SQL", "REST APIs", "Docker", "Redis", "Kubernetes"],
         missingSkills: ["Docker", "Redis", "Kubernetes"],
@@ -121,8 +127,9 @@ const CANONICAL_NEARMISS_OPPORTUNITIES = [
         category: "Internship",
         domain: "AI",
         location: "Remote",
-        deadlineDays: -35,
-        deadlineFormatted: "Aug 02, 2026",
+        deadlineDays: 25,
+        deadlineFormatted: "25d left",
+        deadlineInfo: { daysLeft: 25, label: "25d left", isExpired: false, isUrgent: false, badgeClass: "active" },
         matchScore: 54,
         skills: ["Python", "Pandas", "PyTorch", "CUDA", "MLflow"],
         missingSkills: ["PyTorch", "CUDA", "MLflow"],
@@ -137,8 +144,9 @@ const CANONICAL_NEARMISS_OPPORTUNITIES = [
         category: "Internship",
         domain: "DevOps",
         location: "Remote",
-        deadlineDays: -10,
-        deadlineFormatted: "Aug 30, 2026",
+        deadlineDays: 7,
+        deadlineFormatted: "7d left",
+        deadlineInfo: { daysLeft: 7, label: "7d left", isExpired: false, isUrgent: false, badgeClass: "active" },
         matchScore: 47,
         skills: ["Git", "Python", "AWS", "Terraform", "Docker"],
         missingSkills: ["AWS", "Terraform", "Docker"],
@@ -185,9 +193,30 @@ const CANONICAL_TRENDING_SUGGESTIONS = [
 // App State
 let allMatchedItems = [...CANONICAL_MATCHED_OPPORTUNITIES];
 let allNearMissItems = [...CANONICAL_NEARMISS_OPPORTUNITIES];
+let allGeneralItems = [];
 let activeFilter = "all";
+let activeOnly = true;
 let searchKeyword = "";
 let selectedDomain = "";
+
+/**
+ * Check if the user is currently browsing as a guest.
+ */
+function isGuestUser() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("guest") === "true") {
+        localStorage.setItem("skillsync_guest", "true");
+        localStorage.removeItem("skillsync-student-id");
+        localStorage.removeItem("skillsync-student-name");
+        localStorage.removeItem("skillsync-student-email");
+        localStorage.removeItem("skillsync-student-skills");
+        return true;
+    }
+    if (localStorage.getItem("skillsync_guest") === "true") {
+        return true;
+    }
+    return !localStorage.getItem("skillsync-student-id");
+}
 
 document.addEventListener("DOMContentLoaded", async function () {
     await updateGreetingAndProfile();
@@ -199,8 +228,23 @@ document.addEventListener("DOMContentLoaded", async function () {
  * Personalize greeting based on student name and time of day.
  */
 async function updateGreetingAndProfile() {
+    const greetingEl = document.getElementById("dashboard-greeting");
+    const subtitleEl = document.getElementById("dashboard-greeting-sub") || document.querySelector(".page-greeting p");
+    const guestBanner = document.getElementById("guest-welcome-banner");
+
+    if (isGuestUser()) {
+        if (greetingEl) greetingEl.textContent = "Welcome, Guest";
+        if (subtitleEl) {
+            subtitleEl.innerHTML = `Explore live tech opportunities across all platforms. <a href="profile.html" style="color: var(--primary); font-weight: 600; text-decoration: underline;">Log in or register</a> to match with your skills.`;
+        }
+        if (guestBanner) guestBanner.style.display = "flex";
+        return;
+    }
+
+    if (guestBanner) guestBanner.style.display = "none";
+
     let studentName = localStorage.getItem("skillsync-student-name");
-    if (!studentName) {
+    if (!studentName && localStorage.getItem("skillsync-student-id")) {
         try {
             const current = await safeFetch(`${API_BASE}/students/current`);
             if (current && current.name) {
@@ -210,19 +254,16 @@ async function updateGreetingAndProfile() {
                 if (current.email) localStorage.setItem("skillsync-student-email", current.email);
             }
         } catch (e) {
-            studentName = "Fatima";
+            studentName = "Student";
         }
     }
-    const firstName = (studentName || "Fatima").split(" ")[0];
+    const firstName = (studentName || "Student").split(" ")[0];
 
-    const hour = new Date().getHours();
-    let timeGreeting = "Good morning";
-    if (hour >= 12 && hour < 17) timeGreeting = "Good afternoon";
-    else if (hour >= 17) timeGreeting = "Good evening";
-
-    const greetingEl = document.getElementById("dashboard-greeting");
     if (greetingEl) {
-        greetingEl.textContent = `${timeGreeting}, ${firstName} 👋`;
+        greetingEl.textContent = `Welcome, ${firstName}`;
+    }
+    if (subtitleEl) {
+        subtitleEl.textContent = "Here's what's new and relevant for you.";
     }
 }
 
@@ -230,6 +271,7 @@ async function updateGreetingAndProfile() {
  * Get active student skills from localStorage or defaults.
  */
 function getActiveStudentSkills() {
+    if (isGuestUser()) return [];
     try {
         const saved = localStorage.getItem("skillsync-student-skills");
         if (saved) {
@@ -249,28 +291,36 @@ function getActiveStudentSkills() {
  * 3. Render stats, cards, and trending items
  */
 async function initDashboardData() {
+    const isGuest = isGuestUser();
     const studentSkills = getActiveStudentSkills();
 
     // Start with curated canonical items
     allMatchedItems = [...CANONICAL_MATCHED_OPPORTUNITIES];
     allNearMissItems = [...CANONICAL_NEARMISS_OPPORTUNITIES];
+    allGeneralItems = [
+        ...CANONICAL_MATCHED_OPPORTUNITIES,
+        ...CANONICAL_NEARMISS_OPPORTUNITIES
+    ];
 
     try {
-        // Attempt to fetch live listings to enrich dashboard
-        const data = await fetchListings({ page_size: 30 });
+        // Fetch live listings to enrich dashboard
+        const data = await fetchListings({ page: 1, page_size: 50 });
         if (data && Array.isArray(data.listings)) {
             data.listings.forEach(listing => {
-                if (!listing.skills || listing.skills.length === 0) return;
+                const reqSkills = listing.skills || [];
+                const matched = !isGuest && reqSkills.length > 0
+                    ? reqSkills.filter(req => studentSkills.some(s => s.toLowerCase() === req.toLowerCase()))
+                    : [];
+                const missing = !isGuest && reqSkills.length > 0
+                    ? reqSkills.filter(req => !studentSkills.some(s => s.toLowerCase() === req.toLowerCase()))
+                    : [];
+                const score = reqSkills.length > 0
+                    ? Math.round((matched.length / reqSkills.length) * 100)
+                    : 0;
 
-                const reqSkills = listing.skills;
-                const matched = reqSkills.filter(req =>
-                    studentSkills.some(s => s.toLowerCase() === req.toLowerCase())
-                );
-                const missing = reqSkills.filter(req =>
-                    !studentSkills.some(s => s.toLowerCase() === req.toLowerCase())
-                );
-
-                const score = Math.round((matched.length / reqSkills.length) * 100);
+                const dInfo = (typeof computeDeadlineInfo === "function")
+                    ? computeDeadlineInfo(listing.deadline, listing.posted_date || listing.scraped_at)
+                    : { daysLeft: null, label: "Active", isExpired: false, isUrgent: false, badgeClass: "active" };
 
                 const opportunityObj = {
                     id: listing.id,
@@ -280,8 +330,10 @@ async function initDashboardData() {
                     category: getListingCategory(listing),
                     domain: listing.domain_tag || capitalize(listing.source),
                     location: listing.location || "Remote",
-                    deadlineDays: -12,
-                    deadlineFormatted: formatDate(listing.posted_date || listing.scraped_at),
+                    deadline: listing.deadline,
+                    deadlineInfo: dInfo,
+                    deadlineDays: dInfo.daysLeft,
+                    deadlineFormatted: dInfo.label,
                     matchScore: score,
                     skills: reqSkills,
                     missingSkills: missing,
@@ -289,11 +341,18 @@ async function initDashboardData() {
                     description: cleanDescription(listing.description_raw) || "No description provided."
                 };
 
-                // Add to matched if >= 70% and not duplicate title
-                if (score >= 70 && !allMatchedItems.some(i => i.title.toLowerCase() === listing.title.toLowerCase())) {
-                    allMatchedItems.push(opportunityObj);
-                } else if (score >= 40 && score < 70 && !allNearMissItems.some(i => i.title.toLowerCase() === listing.title.toLowerCase())) {
-                    allNearMissItems.push(opportunityObj);
+                // Add to general list if not duplicate title
+                if (!allGeneralItems.some(i => i.title.toLowerCase() === listing.title.toLowerCase())) {
+                    allGeneralItems.push(opportunityObj);
+                }
+
+                // If logged in student, add to matched / near-miss
+                if (!isGuest && reqSkills.length > 0) {
+                    if (score >= 70 && !allMatchedItems.some(i => i.title.toLowerCase() === listing.title.toLowerCase())) {
+                        allMatchedItems.push(opportunityObj);
+                    } else if (score >= 40 && score < 70 && !allNearMissItems.some(i => i.title.toLowerCase() === listing.title.toLowerCase())) {
+                        allNearMissItems.push(opportunityObj);
+                    }
                 }
             });
         }
@@ -302,8 +361,24 @@ async function initDashboardData() {
     }
 
     renderStats();
-    renderMatchedOpportunities();
-    renderNearMissOpportunities();
+
+    const titleEl = document.getElementById("matched-section-title");
+    const subtitleEl = document.getElementById("matched-section-subtitle");
+    const nearMissSection = document.getElementById("section-nearmiss");
+
+    if (isGuest) {
+        if (titleEl) titleEl.textContent = "All Opportunities";
+        if (subtitleEl) subtitleEl.textContent = "General listings across all platforms — log in to personalize with your skills";
+        if (nearMissSection) nearMissSection.style.display = "none";
+        renderGeneralOpportunities();
+    } else {
+        if (titleEl) titleEl.textContent = "Matched opportunities";
+        if (subtitleEl) subtitleEl.textContent = "Based on your skills and interests";
+        if (nearMissSection) nearMissSection.style.display = "block";
+        renderMatchedOpportunities();
+        renderNearMissOpportunities();
+    }
+
     renderTrendingSuggestions();
 }
 
@@ -319,23 +394,85 @@ function renderStats() {
     const saved = getSavedListings();
     const appliedCount = Math.max(2, saved.length);
 
-    if (matchedEl) matchedEl.textContent = allMatchedItems.length;
-    if (nearmissEl) nearmissEl.textContent = allNearMissItems.length;
-    if (newEl) newEl.textContent = 3;
-    if (appliedEl) appliedEl.textContent = appliedCount;
+    if (isGuestUser()) {
+        if (matchedEl) {
+            matchedEl.textContent = allGeneralItems.length || "25+";
+            const label = matchedEl.parentElement.querySelector(".stat-label");
+            const desc = matchedEl.parentElement.querySelector(".stat-desc");
+            if (label) label.textContent = "All Listings";
+            if (desc) desc.textContent = "Live opportunities";
+        }
+        if (nearmissEl) {
+            nearmissEl.textContent = "3";
+            const label = nearmissEl.parentElement.querySelector(".stat-label");
+            const desc = nearmissEl.parentElement.querySelector(".stat-desc");
+            if (label) label.textContent = "Sources";
+            if (desc) desc.textContent = "Mustakbil, Remotive, Rozee";
+        }
+        if (newEl) {
+            newEl.textContent = "8";
+            const label = newEl.parentElement.querySelector(".stat-label");
+            const desc = newEl.parentElement.querySelector(".stat-desc");
+            if (label) label.textContent = "Domains";
+            if (desc) desc.textContent = "Web, AI, Cloud & more";
+        }
+        if (appliedEl) {
+            appliedEl.textContent = "Guest";
+            const label = appliedEl.parentElement.querySelector(".stat-label");
+            const desc = appliedEl.parentElement.querySelector(".stat-desc");
+            if (label) label.textContent = "Personal Fit";
+            if (desc) desc.innerHTML = `<a href="profile.html" style="color:var(--primary);text-decoration:underline;">Log in to match</a>`;
+        }
+    } else {
+        if (matchedEl) {
+            matchedEl.textContent = allMatchedItems.length;
+            const label = matchedEl.parentElement.querySelector(".stat-label");
+            const desc = matchedEl.parentElement.querySelector(".stat-desc");
+            if (label) label.textContent = "Matched";
+            if (desc) desc.textContent = "Strong skill fit";
+        }
+        if (nearmissEl) {
+            nearmissEl.textContent = allNearMissItems.length;
+            const label = nearmissEl.parentElement.querySelector(".stat-label");
+            const desc = nearmissEl.parentElement.querySelector(".stat-desc");
+            if (label) label.textContent = "Near-miss";
+            if (desc) desc.textContent = "Close to qualifying";
+        }
+        if (newEl) {
+            newEl.textContent = 3;
+            const label = newEl.parentElement.querySelector(".stat-label");
+            const desc = newEl.parentElement.querySelector(".stat-desc");
+            if (label) label.textContent = "New this week";
+            if (desc) desc.textContent = "Added recently";
+        }
+        if (appliedEl) {
+            appliedEl.textContent = appliedCount;
+            const label = appliedEl.parentElement.querySelector(".stat-label");
+            const desc = appliedEl.parentElement.querySelector(".stat-desc");
+            if (label) label.textContent = "Applied";
+            if (desc) desc.textContent = "In progress";
+        }
+    }
 }
 
 /**
- * Filter items by keyword and domain.
+ * Filter items by keyword, domain, and active freshness status.
  */
 function filterListings(items) {
     return items.filter(item => {
+        // Active & Fresh only filter
+        if (activeOnly) {
+            if (item.deadlineInfo && item.deadlineInfo.isExpired) {
+                return false;
+            }
+        }
+
         // Keyword filter
         if (searchKeyword) {
             const kw = searchKeyword.toLowerCase();
-            const matchesTitle = item.title.toLowerCase().includes(kw);
-            const matchesCompany = item.company.toLowerCase().includes(kw);
-            const matchesSkills = item.skills.some(s => s.toLowerCase().includes(kw));
+            const matchesTitle = (item.title || "").toLowerCase().includes(kw);
+            const matchesCompany = (item.company || "").toLowerCase().includes(kw);
+            const matchesSkills = Array.isArray(item.skills) && item.skills.some(s => s.toLowerCase().includes(kw));
             if (!matchesTitle && !matchesCompany && !matchesSkills) return false;
         }
 
@@ -352,6 +489,69 @@ function filterListings(items) {
 }
 
 /**
+ * Render General Opportunities Grid (for Guests).
+ */
+function renderGeneralOpportunities() {
+    const container = document.getElementById("matched-grid");
+    if (!container) return;
+
+    const filtered = filterListings(allGeneralItems);
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-icon">🔍</div>
+                <h3>No opportunities found</h3>
+                <p>Try adjusting your search keyword or active filter.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = filtered.map(item => {
+        const skillsHtml = (item.skills && item.skills.length > 0)
+            ? `<div class="opp-skills-pills">${item.skills.slice(0, 3).map(s => `<span class="opp-skill-pill general">${escapeHtml(s)}</span>`).join("")}</div>`
+            : `<div class="opp-skills-pills"><span class="opp-skill-pill general">Open to all tech backgrounds</span></div>`;
+
+        const sourceLabel = item.source ? capitalize(item.source) : "Live";
+        const deadlineClass = item.deadlineInfo ? item.deadlineInfo.badgeClass : '';
+        const deadlineText = item.deadlineInfo
+            ? item.deadlineInfo.label
+            : (item.deadlineFormatted || (item.deadlineDays ? `${item.deadlineDays}d left` : "Active"));
+
+        return `
+            <div class="opportunity-card general-card" data-id="${item.id}">
+                <div class="opp-top-row">
+                    <h3 class="opp-title">${escapeHtml(item.title)}</h3>
+                    <span class="match-badge general">${escapeHtml(sourceLabel)}</span>
+                </div>
+                <div class="opp-company">${escapeHtml(item.company || 'Tech Company')}</div>
+                <div class="opp-tags">
+                    <span class="opp-tag ${getTagClass(item.category)}">${escapeHtml(item.category || 'Engineering')}</span>
+                    <span class="opp-tag">${escapeHtml(item.domain || 'Tech')}</span>
+                    <span class="opp-tag">📍 ${escapeHtml(item.location || 'Remote')}</span>
+                </div>
+                ${skillsHtml}
+                <div class="opp-footer">
+                    <span class="opp-deadline ${deadlineClass}">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        ${escapeHtml(deadlineText)}
+                    </span>
+                    <button class="btn-opp-details" onclick="openOpportunityModal('${item.id}')">
+                        View details ↗
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+/**
  * Render Matched Opportunities Grid.
  */
 function renderMatchedOpportunities() {
@@ -365,7 +565,7 @@ function renderMatchedOpportunities() {
             <div class="empty-state">
                 <div class="empty-icon">🔍</div>
                 <h3>No matched opportunities found</h3>
-                <p>Try adjusting your search or domain filters.</p>
+                <p>Try adjusting your search, domain, or active filter.</p>
             </div>
         `;
         return;
@@ -384,14 +584,14 @@ function renderMatchedOpportunities() {
                 <span class="opp-tag">📍 ${escapeHtml(item.location)}</span>
             </div>
             <div class="opp-footer">
-                <span class="opp-deadline">
+                <span class="opp-deadline ${item.deadlineInfo ? item.deadlineInfo.badgeClass : ''}">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
-                    ${item.deadlineDays}d left
+                    ${item.deadlineInfo ? escapeHtml(item.deadlineInfo.label) : (item.deadlineDays ? `${item.deadlineDays}d left` : 'Active')}
                 </span>
                 <button class="btn-opp-details" onclick="openOpportunityModal('${item.id}')">
                     View details ↗
@@ -415,7 +615,7 @@ function renderNearMissOpportunities() {
             <div class="empty-state">
                 <div class="empty-icon">🔍</div>
                 <h3>No near-miss opportunities found</h3>
-                <p>Try adjusting your search or domain filters.</p>
+                <p>Try adjusting your search, domain, or active filter.</p>
             </div>
         `;
         return;
@@ -447,14 +647,14 @@ function renderNearMissOpportunities() {
                     <span>Missing: <strong>${escapeHtml(missingText)}</strong></span>
                 </div>
                 <div class="opp-footer">
-                    <span class="opp-deadline">
+                    <span class="opp-deadline ${item.deadlineInfo ? item.deadlineInfo.badgeClass : ''}">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                             <line x1="16" y1="2" x2="16" y2="6"></line>
                             <line x1="8" y1="2" x2="8" y2="6"></line>
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
-                        ${item.deadlineDays}d left
+                        ${item.deadlineInfo ? escapeHtml(item.deadlineInfo.label) : (item.deadlineDays ? `${item.deadlineDays}d left` : 'Active')}
                     </span>
                     <div class="opp-footer-actions">
                         <button class="btn-opp-gap" onclick="openSkillGapModal('${item.id}')">
@@ -498,30 +698,65 @@ function renderTrendingSuggestions() {
  * Open Opportunity Detail Modal (Matching Screenshot 5).
  */
 function openOpportunityModal(oppId) {
-    const item = allMatchedItems.find(i => i.id === oppId) || allNearMissItems.find(i => i.id === oppId);
+    const item = allGeneralItems.find(i => i.id === oppId) ||
+                 allMatchedItems.find(i => i.id === oppId) ||
+                 allNearMissItems.find(i => i.id === oppId);
     if (!item) return;
 
     const overlay = document.getElementById("modal-overlay");
     const modalContent = document.getElementById("modal-content");
     if (!overlay || !modalContent) return;
 
-    const studentSkills = getActiveStudentSkills();
+    const isGuest = isGuestUser();
+    const studentSkills = isGuest ? [] : getActiveStudentSkills();
     const isSaved = getSavedListings().includes(item.id);
-    const isHighMatch = item.matchScore >= 70;
+    const isHighMatch = (item.matchScore || 0) >= 70;
 
-    // Render skill checkmarks
-    const skillsHtml = item.skills.map(skill => {
-        const hasSkill = studentSkills.some(s => s.toLowerCase() === skill.toLowerCase());
-        if (hasSkill) {
-            return `<span class="modal-skill-pill matched">✓ ${escapeHtml(skill)}</span>`;
-        } else {
-            return `<span class="modal-skill-pill missing">⊗ ${escapeHtml(skill)}</span>`;
-        }
-    }).join("");
+    let matchSectionHtml = "";
+    let skillsHtml = "";
 
-    const alignmentText = isHighMatch
-        ? "Strong match — your skills align well with this opportunity."
-        : "Almost there — close to qualifying, missing a few skills.";
+    if (isGuest) {
+        matchSectionHtml = `
+            <div class="modal-guest-callout">
+                <div class="modal-guest-callout-text">
+                    <strong>💡 Exploring as Guest</strong>
+                    <span>Log in or create an account to add your skills and get an instant AI match score for this role.</span>
+                </div>
+                <a href="profile.html" class="btn-modal-login">Log In →</a>
+            </div>
+        `;
+        skillsHtml = (item.skills && item.skills.length > 0)
+            ? item.skills.map(skill => `<span class="modal-skill-pill neutral">• ${escapeHtml(skill)}</span>`).join("")
+            : `<span style="font-size: 0.85rem; color: var(--text-muted);">No specific skills required — open to all tech backgrounds.</span>`;
+    } else {
+        const alignmentText = isHighMatch
+            ? "Strong match — your skills align well with this opportunity."
+            : "Almost there — close to qualifying, missing a few skills.";
+
+        skillsHtml = (item.skills && item.skills.length > 0)
+            ? item.skills.map(skill => {
+                const hasSkill = studentSkills.some(s => s.toLowerCase() === skill.toLowerCase());
+                if (hasSkill) {
+                    return `<span class="modal-skill-pill matched">✓ ${escapeHtml(skill)}</span>`;
+                } else {
+                    return `<span class="modal-skill-pill missing">⊗ ${escapeHtml(skill)}</span>`;
+                }
+            }).join("")
+            : `<span style="font-size: 0.85rem; color: var(--text-muted);">No specific skills required.</span>`;
+
+        matchSectionHtml = `
+            <div class="modal-match-box ${isHighMatch ? 'high' : 'medium'}">
+                <div class="modal-match-top">
+                    <span class="modal-match-label">Match score</span>
+                    <span class="modal-match-percent">${item.matchScore}%</span>
+                </div>
+                <div class="modal-match-track">
+                    <div class="modal-match-fill" style="width: ${item.matchScore}%;"></div>
+                </div>
+                <p class="modal-match-desc">${alignmentText}</p>
+            </div>
+        `;
+    }
 
     modalContent.innerHTML = `
         <button class="modal-dialog-close" id="modal-close-btn" aria-label="Close modal">✕</button>
@@ -535,21 +770,11 @@ function openOpportunityModal(oppId) {
             <span class="opp-tag ${getTagClass(item.category)}">${escapeHtml(item.category)}</span>
             <span class="opp-tag">${escapeHtml(item.domain)}</span>
             <span class="opp-tag">📍 ${escapeHtml(item.location)}</span>
-            <span class="opp-tag">📅 ${escapeHtml(item.deadlineFormatted || 'Aug 15, 2026')}</span>
+            <span class="opp-tag ${item.deadlineInfo ? item.deadlineInfo.badgeClass : ''}">📅 ${escapeHtml(item.deadlineInfo ? item.deadlineInfo.label : (item.deadlineFormatted || 'Active'))}</span>
         </div>
 
         <div class="modal-dialog-body">
-            <!-- Match Score Progress Banner (Screenshot 5) -->
-            <div class="modal-match-box ${isHighMatch ? 'high' : 'medium'}">
-                <div class="modal-match-top">
-                    <span class="modal-match-label">Match score</span>
-                    <span class="modal-match-percent">${item.matchScore}%</span>
-                </div>
-                <div class="modal-match-track">
-                    <div class="modal-match-fill" style="width: ${item.matchScore}%;"></div>
-                </div>
-                <p class="modal-match-desc">${alignmentText}</p>
-            </div>
+            ${matchSectionHtml}
 
             <h3 class="modal-section-heading">About</h3>
             <p class="modal-description-p">${escapeHtml(item.description)}</p>
@@ -686,6 +911,25 @@ function setupEventListeners() {
         });
     }
 
+    // Active & Fresh Only Toggle Button
+    const activeToggle = document.getElementById("header-active-toggle");
+    if (activeToggle) {
+        activeToggle.addEventListener("click", function () {
+            activeOnly = !activeOnly;
+            activeToggle.classList.toggle("active", activeOnly);
+            const labelEl = activeToggle.querySelector(".active-toggle-label");
+            if (labelEl) {
+                labelEl.textContent = activeOnly ? "Active only" : "All (incl. expired)";
+            }
+            if (isGuestUser()) {
+                renderGeneralOpportunities();
+            } else {
+                renderMatchedOpportunities();
+                renderNearMissOpportunities();
+            }
+        });
+    }
+
     // Keyword Search
     const searchInput = document.getElementById("header-search");
     if (searchInput) {
@@ -694,8 +938,12 @@ function setupEventListeners() {
             clearTimeout(debounce);
             debounce = setTimeout(() => {
                 searchKeyword = searchInput.value.trim();
-                renderMatchedOpportunities();
-                renderNearMissOpportunities();
+                if (isGuestUser()) {
+                    renderGeneralOpportunities();
+                } else {
+                    renderMatchedOpportunities();
+                    renderNearMissOpportunities();
+                }
             }, 300);
         });
     }
@@ -705,8 +953,12 @@ function setupEventListeners() {
     if (domainSelect) {
         domainSelect.addEventListener("change", function () {
             selectedDomain = domainSelect.value;
-            renderMatchedOpportunities();
-            renderNearMissOpportunities();
+            if (isGuestUser()) {
+                renderGeneralOpportunities();
+            } else {
+                renderMatchedOpportunities();
+                renderNearMissOpportunities();
+            }
         });
     }
 
@@ -729,18 +981,49 @@ function applyFilterView() {
     const nearMissSection = document.getElementById("section-nearmiss");
     const trendingSection = document.getElementById("section-trending");
 
+    if (isGuestUser()) {
+        if (activeFilter === "all") {
+            if (matchedSection) matchedSection.style.display = "block";
+            if (nearMissSection) nearMissSection.style.display = "none";
+            if (trendingSection) trendingSection.style.display = "block";
+            renderGeneralOpportunities();
+        } else if (activeFilter === "matched" || activeFilter === "near-miss") {
+            if (matchedSection) matchedSection.style.display = "block";
+            if (nearMissSection) nearMissSection.style.display = "none";
+            if (trendingSection) trendingSection.style.display = "none";
+            const container = document.getElementById("matched-grid");
+            if (container) {
+                const filterLabel = activeFilter === "matched" ? "matched" : "near-miss";
+                container.innerHTML = `
+                    <div class="empty-state guest-prompt-state" style="grid-column: 1 / -1;">
+                        <div class="empty-icon">🎯</div>
+                        <h3>Personalized Match View</h3>
+                        <p>You are currently exploring as a guest without saved skills. <a href="profile.html" style="color: var(--primary); font-weight: 600; text-decoration: underline;">Log in or create an account</a> to add your skills and view personalized ${filterLabel} opportunities.</p>
+                        <a href="profile.html" class="btn-primary" style="display: inline-block; width: auto; padding: 10px 24px; margin-top: 14px; text-decoration: none;">Log in / Register</a>
+                    </div>
+                `;
+            }
+        }
+        return;
+    }
+
+    // Logged in student view
     if (activeFilter === "all") {
         if (matchedSection) matchedSection.style.display = "block";
         if (nearMissSection) nearMissSection.style.display = "block";
         if (trendingSection) trendingSection.style.display = "block";
+        renderMatchedOpportunities();
+        renderNearMissOpportunities();
     } else if (activeFilter === "matched") {
         if (matchedSection) matchedSection.style.display = "block";
         if (nearMissSection) nearMissSection.style.display = "none";
         if (trendingSection) trendingSection.style.display = "none";
+        renderMatchedOpportunities();
     } else if (activeFilter === "near-miss") {
         if (matchedSection) matchedSection.style.display = "none";
         if (nearMissSection) nearMissSection.style.display = "block";
         if (trendingSection) trendingSection.style.display = "none";
+        renderNearMissOpportunities();
     }
 }
 

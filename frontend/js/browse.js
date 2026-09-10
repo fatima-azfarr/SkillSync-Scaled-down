@@ -13,6 +13,7 @@ let allDiscoverItems = [];
 let activeCardId = null;
 let currentSource = "";
 let currentKeyword = "";
+let activeOnly = true;
 
 // Fallback student skills if not yet configured in localStorage
 const DEFAULT_STUDENT_SKILLS = [
@@ -50,6 +51,19 @@ function setupFilterControls() {
             loadDiscoverListings();
         });
     });
+
+    const activeToggle = document.getElementById("discover-active-toggle");
+    if (activeToggle) {
+        activeToggle.addEventListener("click", function () {
+            activeOnly = !activeOnly;
+            activeToggle.classList.toggle("active", activeOnly);
+            const labelEl = activeToggle.querySelector(".discover-active-label");
+            if (labelEl) {
+                labelEl.textContent = activeOnly ? "Active only" : "All (incl. expired)";
+            }
+            loadDiscoverListings();
+        });
+    }
 }
 
 /**
@@ -74,6 +88,7 @@ async function loadDiscoverListings() {
         };
         if (currentSource) filters.source = currentSource;
         if (currentKeyword) filters.keyword = currentKeyword;
+        if (activeOnly) filters.active_only = true;
 
         const data = await fetchListings(filters);
 
@@ -84,7 +99,7 @@ async function loadDiscoverListings() {
                     <div class="empty-icon">📭</div>
                     <h3>No listings found</h3>
                     <p style="color: var(--text-secondary); margin-top: 8px;">
-                        ${currentKeyword || currentSource ? "No scraped listings matched your filters. Try a different keyword or source." : "Scrapers may still be collecting data. Check back soon!"}
+                        ${currentKeyword || currentSource || activeOnly ? "No scraped listings matched your filters. Try a different keyword, source, or disable 'Active only'." : "Scrapers may still be collecting data. Check back soon!"}
                     </p>
                 </div>
             `;
@@ -92,22 +107,30 @@ async function loadDiscoverListings() {
         }
 
         // Map listings directly from the scraper data
-        allDiscoverItems = data.listings.map(l => ({
-            id: l.id,
-            title: l.title || "Untitled Opportunity",
-            company: l.company || capitalize(l.source),
-            source: l.source || "unknown",
-            source_url: l.source_url || "#",
-            description_raw: l.description_raw || "",
-            descriptionSnippet: cleanDescription(l.description_raw) || "No description provided in original listing.",
-            category: getListingCategory(l),
-            domain: l.domain_tag || capitalize(l.source),
-            location: l.location || "Remote",
-            locationFormatted: formatLocation(l.location),
-            date: formatDate(l.posted_date || l.scraped_at),
-            skills: Array.isArray(l.skills) ? l.skills : [],
-            apply_url: l.source_url || "#"
-        }));
+        allDiscoverItems = data.listings.map(l => {
+            const dInfo = (typeof computeDeadlineInfo === "function")
+                ? computeDeadlineInfo(l.deadline, l.posted_date || l.scraped_at)
+                : { daysLeft: null, label: "Active", isExpired: false, isUrgent: false, badgeClass: "active" };
+
+            return {
+                id: l.id,
+                title: l.title || "Untitled Opportunity",
+                company: l.company || capitalize(l.source),
+                source: l.source || "unknown",
+                source_url: l.source_url || "#",
+                description_raw: l.description_raw || "",
+                descriptionSnippet: cleanDescription(l.description_raw) || "No description provided in original listing.",
+                category: getListingCategory(l),
+                domain: l.domain_tag || capitalize(l.source),
+                location: l.location || "Remote",
+                locationFormatted: formatLocation(l.location),
+                date: formatDate(l.posted_date || l.scraped_at),
+                deadline: l.deadline,
+                deadlineInfo: dInfo,
+                skills: Array.isArray(l.skills) ? l.skills : [],
+                apply_url: l.source_url || "#"
+            };
+        });
 
         renderDiscoverCards(allDiscoverItems);
 
@@ -181,14 +204,14 @@ function createDiscoverCardHtml(item) {
             </div>
 
             <div class="discover-card-footer">
-                <div class="discover-card-date">
+                <div class="discover-card-date ${item.deadlineInfo ? item.deadlineInfo.badgeClass : ''}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
-                    <span>${escapeHtml(item.date)}</span>
+                    <span>${escapeHtml(item.deadlineInfo ? item.deadlineInfo.label : item.date)}</span>
                 </div>
                 <button class="btn-discover-details" onclick="event.stopPropagation(); openListingModal('${item.id}')">
                     View details ↗
@@ -226,6 +249,10 @@ async function openListingModal(listingId) {
         try {
             const apiData = await fetchListingById(listingId);
             if (apiData) {
+                const dInfo = (typeof computeDeadlineInfo === "function")
+                    ? computeDeadlineInfo(apiData.deadline, apiData.posted_date || apiData.scraped_at)
+                    : { daysLeft: null, label: "Active", isExpired: false, isUrgent: false, badgeClass: "active" };
+
                 item = {
                     id: apiData.id,
                     title: apiData.title || "Untitled Opportunity",
@@ -239,6 +266,8 @@ async function openListingModal(listingId) {
                     location: apiData.location || "Remote",
                     locationFormatted: formatLocation(apiData.location),
                     date: formatDate(apiData.posted_date || apiData.scraped_at),
+                    deadline: apiData.deadline,
+                    deadlineInfo: dInfo,
                     skills: Array.isArray(apiData.skills) ? apiData.skills : [],
                     apply_url: apiData.source_url || "#"
                 };
@@ -268,7 +297,11 @@ async function openListingModal(listingId) {
     if (item.category) modalTags.push(`<span class="discover-modal-tag">${escapeHtml(item.category)}</span>`);
     if (item.source) modalTags.push(`<span class="discover-modal-tag">🌐 ${escapeHtml(capitalize(item.source))}</span>`);
     if (item.location) modalTags.push(`<span class="discover-modal-tag">📍 ${escapeHtml(item.location)}</span>`);
-    if (item.date) modalTags.push(`<span class="discover-modal-tag">📅 ${escapeHtml(item.date)}</span>`);
+    if (item.deadlineInfo && item.deadlineInfo.label) {
+        modalTags.push(`<span class="discover-modal-tag ${item.deadlineInfo.badgeClass}">📅 ${escapeHtml(item.deadlineInfo.label)}</span>`);
+    } else if (item.date) {
+        modalTags.push(`<span class="discover-modal-tag">📅 ${escapeHtml(item.date)}</span>`);
+    }
 
     // Build required skills chips (green if matched, red ⊗ if missing)
     let skillsHtml = "";

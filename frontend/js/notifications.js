@@ -13,10 +13,61 @@ const READ_NOTIFICATIONS_KEY = "skillsync-read-notifications";
 
 let allNotifications = [];
 
+function isGuestUser() {
+    return localStorage.getItem("skillsync_guest") === "true" || !localStorage.getItem("skillsync-student-id");
+}
+
 document.addEventListener("DOMContentLoaded", async function () {
+    if (isGuestUser()) {
+        showGuestLockedNotifications();
+        return;
+    }
+
     await loadNotifications();
     setupNotificationEvents();
 });
+
+/**
+ * Render locked placeholder for guest visitors.
+ */
+function showGuestLockedNotifications() {
+    const markAllBtn = document.getElementById("btn-mark-all-read");
+    if (markAllBtn) markAllBtn.style.display = "none";
+
+    const subtitleEl = document.querySelector(".notifications-subtitle");
+    if (subtitleEl) subtitleEl.textContent = "Sign in to access personalized alerts";
+
+    const container = document.getElementById("notifications-list");
+    if (container) {
+        container.innerHTML = `
+            <div class="notifications-guest-locked">
+                <div class="guest-locked-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h2>Notifications are for Registered Users</h2>
+                <p>
+                    Notifications notify you when new opportunities match your profile and skills, when scraper syncs finish, and when deadlines approach. Log in or create an account to activate your personal alert feed.
+                </p>
+                <div class="guest-locked-actions">
+                    <a href="profile.html" class="btn-guest-action">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                        </svg>
+                        Log In / Register
+                    </a>
+                    <a href="index.html" class="btn-guest-secondary">
+                        Explore Opportunities
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+}
 
 /**
  * Load notifications from API and render.

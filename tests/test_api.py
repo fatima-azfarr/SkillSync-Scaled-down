@@ -14,7 +14,7 @@ They require a running MongoDB instance.
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timedelta
 from pymongo import MongoClient
 import os
 
@@ -194,6 +194,50 @@ class TestListingsEndpoint:
         assert "page" in data
         assert "page_size" in data
         assert "total_pages" in data
+
+    async def test_filter_by_active_only(self, async_client):
+        """GET /listings?active_only=true should filter active/upcoming listings."""
+        client = MongoClient(TEST_MONGO_URI)
+        db = client[TEST_DB_NAME]
+        now = datetime.utcnow()
+        db.listings.insert_one({
+            "title": "Upcoming Opportunity",
+            "source": "mustakbil",
+            "source_url": "https://example.com/job/active",
+            "description_raw": "Active job posting",
+            "company": "TechCorp",
+            "location": "Lahore",
+            "posted_date": now,
+            "deadline": now + timedelta(days=15),
+            "domain_tag": "Web Development",
+            "skills": ["python"],
+            "scraped_at": now,
+            "is_active": True,
+            "fingerprint": "active_fp_123",
+        })
+        db.listings.insert_one({
+            "title": "Expired Opportunity",
+            "source": "mustakbil",
+            "source_url": "https://example.com/job/expired",
+            "description_raw": "Expired job posting",
+            "company": "OldCorp",
+            "location": "Karachi",
+            "posted_date": now - timedelta(days=60),
+            "deadline": now - timedelta(days=10),
+            "domain_tag": "Web Development",
+            "skills": ["python"],
+            "scraped_at": now - timedelta(days=60),
+            "is_active": True,
+            "fingerprint": "expired_fp_123",
+        })
+        client.close()
+
+        response = await async_client.get("/listings?active_only=true&keyword=Opportunity")
+        assert response.status_code == 200
+        data = response.json()
+        titles = [item["title"] for item in data["listings"]]
+        assert "Upcoming Opportunity" in titles
+        assert "Expired Opportunity" not in titles
 
 
 @pytest.mark.asyncio

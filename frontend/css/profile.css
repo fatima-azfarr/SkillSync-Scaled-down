@@ -733,6 +733,88 @@ body.auth-mode .page-content {
     margin-top: 4px;
 }
 
+.required-star {
+    color: var(--danger, #EF4444);
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+.form-row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 480px) {
+    .form-row-2col {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
+.form-input.is-invalid {
+    border-color: #EF4444 !important;
+    background-color: rgba(239, 68, 68, 0.04);
+}
+
+[data-theme="dark"] .form-input.is-invalid {
+    background-color: rgba(239, 68, 68, 0.12);
+}
+
+#auth-message {
+    margin-bottom: 16px;
+}
+
+.form-error {
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    color: #B91C1C;
+    padding: 11px 14px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-sm);
+    font-weight: 500;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: var(--shadow-sm);
+    animation: authShake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+[data-theme="dark"] .form-error {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #FCA5A5;
+}
+
+.form-success {
+    background: #F0FDF4;
+    border: 1px solid #86EFAC;
+    color: #15803D;
+    padding: 11px 14px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-sm);
+    font-weight: 500;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .form-success {
+    background: rgba(34, 197, 94, 0.14);
+    border-color: rgba(34, 197, 94, 0.35);
+    color: #86EFAC;
+}
+
+@keyframes authShake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+    40%, 60% { transform: translate3d(3px, 0, 0); }
+}
+
 .btn-primary {
     width: 100%;
     padding: 11px;
@@ -1148,7 +1230,7 @@ body.auth-mode .page-content {
 
 .btn-modal-dashboard {
     background: var(--primary);
-    color: white;
+    color: #ffffff !important;
     border: none;
     padding: 9px 20px;
     border-radius: var(--radius-sm);
@@ -1159,12 +1241,26 @@ body.auth-mode .page-content {
     align-items: center;
     gap: 8px;
     box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
-    transition: background 0.15s, transform 0.1s;
+    transition: background 0.15s, transform 0.1s, color 0.15s;
 }
 
-.btn-modal-dashboard:hover {
+.btn-modal-dashboard:hover,
+.btn-modal-dashboard:focus,
+.btn-modal-dashboard:active {
     background: var(--primary-dark);
+    color: #ffffff !important;
     transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.btn-modal-dashboard span,
+.btn-modal-dashboard:hover span {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-modal-dashboard,
+[data-theme="dark"] .btn-modal-dashboard:hover {
+    color: #ffffff !important;
 }
 
 /* Dark Mode Overrides for Recompute Modal */

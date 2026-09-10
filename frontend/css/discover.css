@@ -218,6 +218,26 @@
     font-weight: 500;
 }
 
+.discover-card-date.active {
+    color: #0D9488;
+    font-weight: 600;
+}
+
+.discover-card-date.urgent {
+    color: #D97706;
+    font-weight: 600;
+}
+
+.discover-card-date.expired {
+    color: #EF4444;
+    font-weight: 600;
+}
+
+.discover-card-date.rolling {
+    color: #6366F1;
+    font-weight: 600;
+}
+
 .btn-discover-details {
     display: inline-flex;
     align-items: center;
@@ -813,6 +833,60 @@
 [data-theme="dark"] .source-tab.active {
     background: #111827;
     color: var(--primary, #0D9488);
+}
+
+/* ─── Discover Active Only Toggle Button ─── */
+.discover-active-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--bg-card, #FFFFFF);
+    border: 1px solid var(--border, #E5E7EB);
+    color: var(--text-secondary, #6B7280);
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 0.825rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.discover-active-toggle:hover {
+    border-color: var(--primary, #0D9488);
+    color: var(--text-primary, #111827);
+}
+
+.discover-active-toggle.active {
+    background: rgba(13, 148, 136, 0.1);
+    border-color: var(--primary, #0D9488);
+    color: var(--primary, #0D9488);
+}
+
+.discover-active-toggle .active-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #9CA3AF;
+    transition: all 0.2s ease;
+}
+
+.discover-active-toggle.active .active-dot {
+    background-color: #10B981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+[data-theme="dark"] .discover-active-toggle {
+    background: #1F2937;
+    border-color: #374151;
+    color: #9CA3AF;
+}
+
+[data-theme="dark"] .discover-active-toggle.active {
+    background: rgba(13, 148, 136, 0.2);
+    border-color: var(--primary, #0D9488);
+    color: #2DD4BF;
 }
 
 /* ─── Modal HTML Scraped Description Styling ─── */

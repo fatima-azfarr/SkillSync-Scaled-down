@@ -10,6 +10,7 @@ The future React dashboard (FYP-I) will consume these endpoints.
 """
 
 import math
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Query, HTTPException
 from bson import ObjectId
 from typing import Optional
@@ -30,6 +31,7 @@ async def get_listings(
     source: Optional[str] = Query(None, description="Filter by source (e.g., 'rozee', 'devpost')"),
     keyword: Optional[str] = Query(None, description="Search in title and description"),
     domain: Optional[str] = Query(None, description="Filter by domain tag (FYP-I feature)"),
+    active_only: bool = Query(False, description="Filter for active/upcoming listings only"),
     page: int = Query(1, ge=1, description="Page number (starts at 1)"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page (max 100)"),
 ):
@@ -40,6 +42,7 @@ async def get_listings(
     - **source**: Filter by platform (rozee, mustakbil, internee, remotive, devpost, wuzzuf)
     - **keyword**: Search keyword in title and description
     - **domain**: Filter by domain tag (populated in FYP-I)
+    - **active_only**: Filter for active/upcoming listings only (excludes expired deadlines)
     - **page**: Page number for pagination
     - **page_size**: Number of results per page (default 20, max 100)
     
@@ -50,24 +53,39 @@ async def get_listings(
     collection = db[config.LISTINGS_COLLECTION]
     
     # Build the MongoDB query filter
-    # Only add conditions that the user actually provided
-    query_filter = {}
+    conditions = []
     
     if source:
         # Exact match on source platform
-        query_filter["source"] = source.lower()
+        conditions.append({"source": source.lower()})
     
     if keyword:
         # Text search in title and description using MongoDB regex
-        # $or means: match if keyword is in title OR description
-        # $regex with $options:"i" means case-insensitive search
-        query_filter["$or"] = [
-            {"title": {"$regex": keyword, "$options": "i"}},
-            {"description_raw": {"$regex": keyword, "$options": "i"}},
-        ]
+        conditions.append({
+            "$or": [
+                {"title": {"$regex": keyword, "$options": "i"}},
+                {"description_raw": {"$regex": keyword, "$options": "i"}},
+            ]
+        })
     
     if domain:
-        query_filter["domain_tag"] = domain
+        conditions.append({"domain_tag": domain})
+
+    if active_only:
+        now = datetime.utcnow()
+        conditions.append({
+            "$or": [
+                {"deadline": {"$gte": now}},
+                {"deadline": None, "scraped_at": {"$gte": now - timedelta(days=45)}}
+            ]
+        })
+    
+    if len(conditions) == 1:
+        query_filter = conditions[0]
+    elif len(conditions) > 1:
+        query_filter = {"$and": conditions}
+    else:
+        query_filter = {}
     
     # Count total matching documents (for pagination metadata)
     total = await collection.count_documents(query_filter)
