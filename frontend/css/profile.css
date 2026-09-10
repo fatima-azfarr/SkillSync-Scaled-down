@@ -506,6 +506,31 @@
     }
 }
 
+/* ─── Instant View Gating (Eliminates Flash of Unauthenticated Content / Glitch) ─── */
+html.profile-mode #auth-view,
+body.profile-mode #auth-view,
+html:not(.auth-mode) #auth-view,
+body:not(.auth-mode) #auth-view {
+    display: none !important;
+}
+
+html.profile-mode #profile-view,
+body.profile-mode #profile-view,
+html:not(.auth-mode) #profile-view,
+body:not(.auth-mode) #profile-view {
+    display: flex !important;
+}
+
+html.auth-mode #profile-view,
+body.auth-mode #profile-view {
+    display: none !important;
+}
+
+html.auth-mode #auth-view,
+body.auth-mode #auth-view {
+    display: block !important;
+}
+
 /* ─── Auth Mode (Clean Centered Layout without Side Menu) ─── */
 .auth-mode .app-layout,
 body.auth-mode .app-layout {
@@ -725,6 +750,54 @@ body.auth-mode .page-content {
 .form-input:focus {
     outline: none;
     border-color: var(--primary);
+}
+
+/* ─── Password Input with Visibility Toggle ─── */
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .form-input {
+    padding-right: 44px;
+}
+
+.btn-toggle-password {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    border-radius: var(--radius-sm, 6px);
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-toggle-password:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-hover, rgba(0, 0, 0, 0.05));
+}
+
+[data-theme="dark"] .btn-toggle-password:hover {
+    background-color: var(--bg-hover, rgba(255, 255, 255, 0.08));
+}
+
+.btn-toggle-password:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+.btn-toggle-password svg {
+    display: block;
+    stroke: currentColor;
 }
 
 .form-hint {

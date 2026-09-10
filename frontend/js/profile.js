@@ -49,6 +49,10 @@ function saveSession(studentId, name, email) {
     currentStudentId = studentId;
     document.documentElement.classList.remove("is-guest");
     document.body.classList.remove("is-guest");
+    document.documentElement.classList.add("profile-mode");
+    document.body.classList.add("profile-mode");
+    document.documentElement.classList.remove("auth-mode");
+    document.body.classList.remove("auth-mode");
     if (typeof updateGlobalNotificationBadges === "function") {
         updateGlobalNotificationBadges();
     }
@@ -63,12 +67,17 @@ function clearSession() {
     localStorage.removeItem(STUDENT_NAME_KEY);
     localStorage.removeItem("skillsync-student-email");
     localStorage.removeItem("skillsync-student-skills");
+    localStorage.removeItem("skillsync-student-university");
+    localStorage.removeItem("skillsync-student-field");
+    localStorage.removeItem("skillsync-student-domains");
     localStorage.setItem("skillsync_guest", "true");
     currentStudentId = null;
     document.documentElement.classList.add("is-guest");
     document.body.classList.add("is-guest");
     document.documentElement.classList.add("auth-mode");
     document.body.classList.add("auth-mode");
+    document.documentElement.classList.remove("profile-mode");
+    document.body.classList.remove("profile-mode");
     if (typeof updateGlobalNotificationBadges === "function") {
         updateGlobalNotificationBadges();
     }
@@ -112,6 +121,7 @@ function switchTab(tab) {
     const msg = document.getElementById("auth-message");
     if (msg) msg.innerHTML = "";
     document.querySelectorAll(".form-input.is-invalid").forEach(el => el.classList.remove("is-invalid"));
+    resetPasswordToggles();
 
     if (tab === "login") {
         loginForm.style.display = "block";
@@ -131,6 +141,8 @@ function switchTab(tab) {
 function showAuthView() {
     document.documentElement.classList.add("auth-mode");
     document.body.classList.add("auth-mode");
+    document.documentElement.classList.remove("profile-mode");
+    document.body.classList.remove("profile-mode");
 
     const authView = document.getElementById("auth-view");
     const profileView = document.getElementById("profile-view");
@@ -144,6 +156,8 @@ function showAuthView() {
 function showProfileView(student) {
     document.documentElement.classList.remove("auth-mode");
     document.body.classList.remove("auth-mode");
+    document.documentElement.classList.add("profile-mode");
+    document.body.classList.add("profile-mode");
 
     const authView = document.getElementById("auth-view");
     const profileView = document.getElementById("profile-view");
@@ -153,9 +167,11 @@ function showProfileView(student) {
     if (profileView) profileView.style.display = "flex";
     if (sidebar) sidebar.style.display = "flex";
 
+    if (!student) return;
+
     // User details in Card 1
-    const name = student.name || "Fatima";
-    const email = student.email || "fa23-bcs-185@cuilahore.edu.pk";
+    const name = student.name || localStorage.getItem(STUDENT_NAME_KEY) || "Fatima";
+    const email = student.email || localStorage.getItem("skillsync-student-email") || "fa23-bcs-185@cuilahore.edu.pk";
     const initials = name
         .split(" ")
         .map((w) => w[0])
@@ -163,9 +179,12 @@ function showProfileView(student) {
         .toUpperCase()
         .slice(0, 2) || "F";
 
-    document.getElementById("profile-card-name").textContent = name;
-    document.getElementById("profile-card-email").textContent = email;
-    document.getElementById("profile-card-avatar").textContent = initials;
+    const nameEl = document.getElementById("profile-card-name");
+    const emailEl = document.getElementById("profile-card-email");
+    const avatarEl = document.getElementById("profile-card-avatar");
+    if (nameEl) nameEl.textContent = name;
+    if (emailEl) emailEl.textContent = email;
+    if (avatarEl) avatarEl.textContent = initials;
 
     // Sidebar User Badge
     const sidebarName = document.getElementById("sidebar-user-name");
@@ -176,23 +195,51 @@ function showProfileView(student) {
     if (sidebarEmail) sidebarEmail.textContent = email;
 
     // Education inputs
-    document.getElementById("profile-university").value =
-        student.university || "NUST — National University of Sciences and Technology";
-    document.getElementById("profile-field").value =
-        student.field_of_study || "Computer Science";
+    const uniInput = document.getElementById("profile-university");
+    const fieldInput = document.getElementById("profile-field");
+    if (uniInput) {
+        uniInput.value =
+            student.university ||
+            localStorage.getItem("skillsync-student-university") ||
+            "COMSATS University Islamabad, Lahore Campus";
+    }
+    if (fieldInput) {
+        fieldInput.value =
+            student.field_of_study ||
+            localStorage.getItem("skillsync-student-field") ||
+            "Computer Science";
+    }
 
     // Skills
     if (student.skills && student.skills.length > 0) {
         currentSkills = [...student.skills];
-    } else {
-        currentSkills = [...DEFAULT_SKILLS];
+    } else if (currentSkills.length === 0) {
+        try {
+            const cached = JSON.parse(localStorage.getItem("skillsync-student-skills"));
+            if (Array.isArray(cached) && cached.length > 0) {
+                currentSkills = [...cached];
+            } else {
+                currentSkills = [...DEFAULT_SKILLS];
+            }
+        } catch (e) {
+            currentSkills = [...DEFAULT_SKILLS];
+        }
     }
 
     // Domain interests
     if (student.domain_interests && student.domain_interests.length > 0) {
         selectedDomains = [...student.domain_interests];
-    } else {
-        selectedDomains = [...DEFAULT_DOMAINS];
+    } else if (selectedDomains.length === 0) {
+        try {
+            const cached = JSON.parse(localStorage.getItem("skillsync-student-domains"));
+            if (Array.isArray(cached) && cached.length > 0) {
+                selectedDomains = [...cached];
+            } else {
+                selectedDomains = [...DEFAULT_DOMAINS];
+            }
+        } catch (e) {
+            selectedDomains = [...DEFAULT_DOMAINS];
+        }
     }
 
     renderSkillChips();
@@ -201,6 +248,9 @@ function showProfileView(student) {
 
     try {
         localStorage.setItem("skillsync-student-skills", JSON.stringify(currentSkills));
+        if (student.university) localStorage.setItem("skillsync-student-university", student.university);
+        if (student.field_of_study) localStorage.setItem("skillsync-student-field", student.field_of_study);
+        if (student.domain_interests) localStorage.setItem("skillsync-student-domains", JSON.stringify(student.domain_interests));
     } catch (e) {}
 }
 
@@ -338,6 +388,9 @@ async function handleSaveChanges() {
         showToast("Profile & skills saved successfully!");
         try {
             localStorage.setItem("skillsync-student-skills", JSON.stringify(currentSkills));
+            if (university) localStorage.setItem("skillsync-student-university", university);
+            if (fieldOfStudy) localStorage.setItem("skillsync-student-field", fieldOfStudy);
+            if (selectedDomains) localStorage.setItem("skillsync-student-domains", JSON.stringify(selectedDomains));
         } catch (e) {}
     } catch (err) {
         showToast(err.message, "error");
@@ -532,11 +585,13 @@ document.addEventListener("click", (e) => {
 
 async function loadCurrentStudent() {
     let studentId = getSession();
+    const urlParams = new URLSearchParams(window.location.search);
+    const isGuest = urlParams.get("guest") === "true" || localStorage.getItem("skillsync_guest") === "true";
 
-    if (!studentId) {
+    if (!studentId || isGuest) {
         try {
             const current = await safeFetch(`${API_BASE}/students/current`);
-            if (current && current.id) {
+            if (current && current.id && !isGuest) {
                 saveSession(current.id, current.name, current.email);
                 showProfileView(current);
                 return;
@@ -546,6 +601,29 @@ async function loadCurrentStudent() {
         return;
     }
 
+    // Instant cache hydration: immediately populate DOM to guarantee 0ms latency and 0 visual glitches
+    const cachedName = localStorage.getItem(STUDENT_NAME_KEY) || "Fatima";
+    const cachedEmail = localStorage.getItem("skillsync-student-email") || "fa23-bcs-185@cuilahore.edu.pk";
+    const cachedUni = localStorage.getItem("skillsync-student-university");
+    const cachedField = localStorage.getItem("skillsync-student-field");
+    let cachedSkills = null;
+    let cachedDomains = null;
+    try {
+        const s = localStorage.getItem("skillsync-student-skills");
+        if (s) cachedSkills = JSON.parse(s);
+        const d = localStorage.getItem("skillsync-student-domains");
+        if (d) cachedDomains = JSON.parse(d);
+    } catch (e) {}
+
+    showProfileView({
+        name: cachedName,
+        email: cachedEmail,
+        university: cachedUni,
+        field_of_study: cachedField,
+        skills: cachedSkills,
+        domain_interests: cachedDomains,
+    });
+
     try {
         const student = await fetchStudent(studentId);
         showProfileView(student);
@@ -553,16 +631,6 @@ async function loadCurrentStudent() {
         if (err.status === 404 || err.message?.toLowerCase().includes("not found")) {
             clearSession();
             showAuthView();
-        } else {
-            // In case of connection issue, load cached session view
-            showProfileView({
-                name: localStorage.getItem(STUDENT_NAME_KEY) || "Fatima",
-                email: localStorage.getItem("skillsync-student-email") || "fa23-bcs-185@cuilahore.edu.pk",
-                university: "Comsats University",
-                field_of_study: "Computer Science",
-                skills: DEFAULT_SKILLS,
-                domain_interests: DEFAULT_DOMAINS,
-            });
         }
     }
 }
@@ -618,7 +686,7 @@ document.addEventListener("DOMContentLoaded", () => {
         submitBtn.textContent = "Logging in...";
 
         try {
-            const email = document.getElementById("login-email").value;
+            const email = (document.getElementById("login-email").value || "").trim().toLowerCase();
             const password = document.getElementById("login-password").value;
             const student = await loginStudent(email, password);
             saveSession(student.id, student.name, student.email);
@@ -764,8 +832,87 @@ document.addEventListener("DOMContentLoaded", () => {
         clearSession();
     });
 
+    initPasswordToggles();
     loadCurrentStudent();
 });
+
+// ─── Password Visibility Toggles ──────────────────────────────
+const EYE_ICON_SVG = `<svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_OFF_ICON_SVG = `<svg class="eye-off-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+function initPasswordToggles() {
+    document.querySelectorAll(".btn-toggle-password").forEach((btn) => {
+        if (btn.dataset.bound) return;
+        btn.dataset.bound = "true";
+
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            const targetId = btn.getAttribute("data-target");
+            const input = document.getElementById(targetId);
+            if (!input) return;
+
+            const isCurrentlyPassword = input.getAttribute("type") === "password";
+            if (isCurrentlyPassword) {
+                input.setAttribute("type", "text");
+                btn.innerHTML = EYE_OFF_ICON_SVG;
+                btn.setAttribute("aria-label", "Hide password");
+                btn.setAttribute("title", "Hide password");
+            } else {
+                input.setAttribute("type", "password");
+                btn.innerHTML = EYE_ICON_SVG;
+                btn.setAttribute("aria-label", "Show password");
+                btn.setAttribute("title", "Show password");
+            }
+            input.focus();
+        });
+    });
+}
+
+function resetPasswordToggles() {
+    document.querySelectorAll(".btn-toggle-password").forEach((btn) => {
+        const targetId = btn.getAttribute("data-target");
+        const input = document.getElementById(targetId);
+        if (input) {
+            input.setAttribute("type", "password");
+            btn.innerHTML = EYE_ICON_SVG;
+            btn.setAttribute("aria-label", "Show password");
+            btn.setAttribute("title", "Show password");
+        }
+    });
+}
+
+// Synchronously hydrate from cache immediately on script execution (DOM elements are already parsed)
+(function earlyHydrate() {
+    try {
+        initPasswordToggles();
+        const urlParams = new URLSearchParams(window.location.search);
+        const isGuest = urlParams.get("guest") === "true" || localStorage.getItem("skillsync_guest") === "true";
+        const studentId = localStorage.getItem(STUDENT_KEY);
+        if (studentId && !isGuest) {
+            const cachedName = localStorage.getItem(STUDENT_NAME_KEY) || "Fatima";
+            const cachedEmail = localStorage.getItem("skillsync-student-email") || "fa23-bcs-185@cuilahore.edu.pk";
+            const cachedUni = localStorage.getItem("skillsync-student-university");
+            const cachedField = localStorage.getItem("skillsync-student-field");
+            let cachedSkills = null;
+            let cachedDomains = null;
+            try {
+                const s = localStorage.getItem("skillsync-student-skills");
+                if (s) cachedSkills = JSON.parse(s);
+                const d = localStorage.getItem("skillsync-student-domains");
+                if (d) cachedDomains = JSON.parse(d);
+            } catch (e) {}
+
+            showProfileView({
+                name: cachedName,
+                email: cachedEmail,
+                university: cachedUni,
+                field_of_study: cachedField,
+                skills: cachedSkills,
+                domain_interests: cachedDomains,
+            });
+        }
+    } catch (e) {}
+})();
 
 // Helper to escape HTML characters
 function escapeHtml(str) {

@@ -17,11 +17,18 @@
     <!-- Theme (load early to prevent flash) -->
     <script src="js/theme.js"></script>
     <script>
-        // Check session early to avoid sidebar flash if logged out
+        // Check session early to avoid any glitch or layout shift
         (function() {
             try {
-                if (!localStorage.getItem("skillsync-student-id")) {
+                var isGuestParam = window.location.search && window.location.search.indexOf("guest=true") !== -1;
+                var studentId = localStorage.getItem("skillsync-student-id");
+                var isGuest = isGuestParam || localStorage.getItem("skillsync_guest") === "true";
+                if (!studentId || isGuest) {
                     document.documentElement.classList.add("auth-mode");
+                    document.documentElement.classList.remove("profile-mode");
+                } else {
+                    document.documentElement.classList.add("profile-mode");
+                    document.documentElement.classList.remove("auth-mode");
                 }
             } catch (e) {}
         })();
@@ -92,7 +99,7 @@
             <div class="page-content" style="padding-top: 28px;">
 
                 <!-- ═══ LOGGED-OUT VIEW: login/register tabs ═══ -->
-                <div id="auth-view" class="auth-container">
+                <div id="auth-view" class="auth-container" style="display: none;">
                     <div class="auth-header-card">
                         <div class="auth-brand-row">
                             <div class="auth-logo">Skill<span>Sync</span></div>
@@ -119,8 +126,13 @@
                         </div>
                         <div class="form-group">
                             <label for="login-password">Password</label>
-                            <input type="password" id="login-password" class="form-input" required
-                                   placeholder="••••••••">
+                            <div class="password-input-wrapper">
+                                <input type="password" id="login-password" class="form-input" required
+                                       placeholder="••••••••" autocomplete="current-password">
+                                <button type="button" class="btn-toggle-password" data-target="login-password" aria-label="Show password" title="Show password">
+                                    <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
+                            </div>
                         </div>
                         <button type="submit" class="btn-primary" id="login-submit">Log In</button>
                     </form>
@@ -146,14 +158,24 @@
                         </div>
                         <div class="form-group">
                             <label for="register-password">Password <span class="required-star" aria-hidden="true">*</span></label>
-                            <input type="password" id="register-password" class="form-input" required aria-required="true"
-                                   placeholder="At least 8 characters" autocomplete="new-password">
+                            <div class="password-input-wrapper">
+                                <input type="password" id="register-password" class="form-input" required aria-required="true"
+                                       placeholder="At least 8 characters" autocomplete="new-password">
+                                <button type="button" class="btn-toggle-password" data-target="register-password" aria-label="Show password" title="Show password">
+                                    <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
+                            </div>
                             <div class="form-hint">Minimum 8 characters.</div>
                         </div>
                         <div class="form-group">
                             <label for="register-confirm-password">Re-enter Password <span class="required-star" aria-hidden="true">*</span></label>
-                            <input type="password" id="register-confirm-password" class="form-input" required aria-required="true"
-                                   placeholder="Re-enter your password" autocomplete="new-password">
+                            <div class="password-input-wrapper">
+                                <input type="password" id="register-confirm-password" class="form-input" required aria-required="true"
+                                       placeholder="Re-enter your password" autocomplete="new-password">
+                                <button type="button" class="btn-toggle-password" data-target="register-confirm-password" aria-label="Show password" title="Show password">
+                                    <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
+                            </div>
                         </div>
                         <button type="submit" class="btn-primary" id="register-submit">Create Account</button>
                     </form>
@@ -164,7 +186,7 @@
                 </div>
 
                 <!-- ═══ LOGGED-IN VIEW: Profile & Skills ═══ -->
-                <div class="profile-container" id="profile-view" style="display: none;">
+                <div class="profile-container" id="profile-view">
 
                     <!-- Profile Header Bar -->
                     <div class="profile-header-bar">

@@ -111,7 +111,7 @@ async def login_student(payload: StudentLogin):
     db = get_database()
     collection = db[config.STUDENTS_COLLECTION]
 
-    doc = await collection.find_one({"email": payload.email.lower()})
+    doc = await collection.find_one({"email": payload.email.lower().strip()})
     if not doc or not verify_password(payload.password, doc["password_hash"]):
         # Same error for "no such email" and "wrong password" on purpose -
         # confirming which one it was would leak whether an email is registered
