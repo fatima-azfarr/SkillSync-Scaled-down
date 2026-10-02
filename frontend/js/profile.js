@@ -41,10 +41,11 @@ let currentStudentId = null;
 
 // ─── Session Helpers ──────────────────────────────
 
-function saveSession(studentId, name, email) {
+function saveSession(studentId, name, email, token) {
     localStorage.setItem(STUDENT_KEY, studentId);
     if (name) localStorage.setItem(STUDENT_NAME_KEY, name);
     if (email) localStorage.setItem("skillsync-student-email", email);
+    if (token) localStorage.setItem("skillsync-access-token", token);
     localStorage.removeItem("skillsync_guest");
     currentStudentId = studentId;
     document.documentElement.classList.remove("is-guest");
@@ -70,6 +71,7 @@ function clearSession() {
     localStorage.removeItem("skillsync-student-university");
     localStorage.removeItem("skillsync-student-field");
     localStorage.removeItem("skillsync-student-domains");
+    localStorage.removeItem("skillsync-access-token");
     localStorage.setItem("skillsync_guest", "true");
     currentStudentId = null;
     document.documentElement.classList.add("is-guest");
@@ -590,11 +592,14 @@ async function loadCurrentStudent() {
 
     if (!studentId || isGuest) {
         try {
-            const current = await safeFetch(`${API_BASE}/students/current`);
-            if (current && current.id && !isGuest) {
-                saveSession(current.id, current.name, current.email);
-                showProfileView(current);
-                return;
+            const res = await safeFetch(`${API_BASE}/students/current`);
+            if (res && res.ok) {
+                const current = await res.json();
+                if (current && current.id && !isGuest) {
+                    saveSession(current.id, current.name, current.email);
+                    showProfileView(current);
+                    return;
+                }
             }
         } catch (e) {}
         showAuthView();
@@ -688,9 +693,9 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const email = (document.getElementById("login-email").value || "").trim().toLowerCase();
             const password = document.getElementById("login-password").value;
-            const student = await loginStudent(email, password);
-            saveSession(student.id, student.name, student.email);
-            showProfileView(student);
+            const loginData = await loginStudent(email, password);
+            saveSession(loginData.id, loginData.name, loginData.email, loginData.access_token);
+            showProfileView(loginData.student || loginData);
         } catch (err) {
             showAuthMessage(err.message, "error");
         } finally {
@@ -798,8 +803,14 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             const student = await registerStudent(data);
-            saveSession(student.id, student.name, student.email);
-            showProfileView(student);
+            try {
+                const loginData = await loginStudent(email, password);
+                saveSession(loginData.id, loginData.name, loginData.email, loginData.access_token);
+                showProfileView(loginData.student || student);
+            } catch {
+                saveSession(student.id, student.name, student.email);
+                showProfileView(student);
+            }
         } catch (err) {
             showAuthMessage(err.message, "error");
         } finally {

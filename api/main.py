@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.config import config
 from api.database import close_mongodb_connection, connect_to_mongodb
 from api.routes import health, listings, notifications, sources, students
 
@@ -50,16 +51,27 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add CORS middleware
-# This allows the future React frontend (FYP-I) to make requests to this API
-# For now, we allow all origins since there's no sensitive user data
+# Add CORS middleware with strict origin policies
+# Wildcards with credentials are systematically rejected by browsers and insecure
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],       # Allow all origins (restrict in production)
+    allow_origins=config.CORS_ALLOWED_ORIGINS,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
-    allow_methods=["*"],       # Allow all HTTP methods
-    allow_headers=["*"],       # Allow all headers
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
 )
+
+# Defensive Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+    return response
+
 
 # Register route handlers
 # Each router handles a group of related endpoints

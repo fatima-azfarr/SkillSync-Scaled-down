@@ -120,7 +120,7 @@ class StudentProfileUpdate(BaseModel):
 
 
 class StudentResponse(BaseModel):
-    """What the API returns for a student - never includes password_hash."""
+    """What the API returns for a student - strictly excludes password_hash and secrets."""
     id: str
     name: str
     first_name: Optional[str] = None
@@ -132,7 +132,50 @@ class StudentResponse(BaseModel):
     university: Optional[str] = None
     field_of_study: Optional[str] = None
     domain_interests: List[str] = Field(default_factory=list)
+    is_verified: bool = Field(default=False, description="Whether email has been verified")
     created_at: datetime
+
+
+class StudentLoginResponse(BaseModel):
+    """
+    Response returned on successful authentication.
+    Delivers standard JWT access token along with profile metadata.
+    """
+    id: str
+    name: str
+    email: EmailStr
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    is_verified: bool = False
+    student: StudentResponse
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Request body for POST /students/forgot-password."""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Request body for POST /students/reset-password."""
+    token: str = Field(..., min_length=10, description="Password reset token")
+    new_password: str = Field(..., min_length=8, max_length=72, description="New secure password")
+
+
+class VerifyEmailRequest(BaseModel):
+    """Request body for POST /students/verify-email."""
+    token: str = Field(..., min_length=10, description="Email verification token")
+
+
+class ResendVerificationRequest(BaseModel):
+    """Request body for POST /students/resend-verification."""
+    email: EmailStr
+
+
+class MessageResponse(BaseModel):
+    """Generic status response for auth actions."""
+    status: str = "success"
+    message: str
 
 
 class NotificationResponse(BaseModel):

@@ -158,10 +158,15 @@ function truncate(text, maxLen = 120) {
     return text.substring(0, maxLen).trim() + "…";
 }
 
-// Helper for fetch that provides clear error messages on network failure
-async function safeFetch(url, options) {
+// Helper for fetch that provides clear error messages on network failure and attaches Bearer token if present
+async function safeFetch(url, options = {}) {
     try {
-        return await fetch(url, options);
+        const token = localStorage.getItem("skillsync-access-token");
+        const headers = new Headers(options.headers || {});
+        if (token && !headers.has("Authorization")) {
+            headers.set("Authorization", `Bearer ${token}`);
+        }
+        return await fetch(url, { ...options, headers });
     } catch (err) {
         if (err.name === "TypeError" || (err.message && err.message.includes("fetch"))) {
             throw new Error(`Cannot connect to backend server at ${API_BASE}. Make sure the FastAPI backend is running.`);
@@ -218,7 +223,11 @@ async function loginStudent(email, password) {
         throw new Error(body?.detail || `Login failed (${response.status})`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    if (data.access_token) {
+        localStorage.setItem("skillsync-access-token", data.access_token);
+    }
+    return data;
 }
 
 /**
@@ -293,6 +302,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         localStorage.removeItem("skillsync-student-name");
         localStorage.removeItem("skillsync-student-email");
         localStorage.removeItem("skillsync-student-skills");
+        localStorage.removeItem("skillsync-access-token");
     }
 
     const isGuest = localStorage.getItem("skillsync_guest") === "true" || !localStorage.getItem("skillsync-student-id");
@@ -350,6 +360,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 localStorage.removeItem("skillsync-student-name");
                 localStorage.removeItem("skillsync-student-email");
                 localStorage.removeItem("skillsync-student-skills");
+                localStorage.removeItem("skillsync-access-token");
                 document.documentElement.classList.add("is-guest");
                 document.body.classList.add("is-guest");
                 updateGlobalNotificationBadges();

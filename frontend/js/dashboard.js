@@ -246,12 +246,15 @@ async function updateGreetingAndProfile() {
     let studentName = localStorage.getItem("skillsync-student-name");
     if (!studentName && localStorage.getItem("skillsync-student-id")) {
         try {
-            const current = await safeFetch(`${API_BASE}/students/current`);
-            if (current && current.name) {
-                studentName = current.name;
-                localStorage.setItem("skillsync-student-name", current.name);
-                localStorage.setItem("skillsync-student-id", current.id);
-                if (current.email) localStorage.setItem("skillsync-student-email", current.email);
+            const res = await safeFetch(`${API_BASE}/students/current`);
+            if (res && res.ok) {
+                const current = await res.json();
+                if (current && current.name) {
+                    studentName = current.name;
+                    localStorage.setItem("skillsync-student-name", current.name);
+                    localStorage.setItem("skillsync-student-id", current.id);
+                    if (current.email) localStorage.setItem("skillsync-student-email", current.email);
+                }
             }
         } catch (e) {
             studentName = "Student";

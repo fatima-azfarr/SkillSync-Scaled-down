@@ -16,12 +16,21 @@ Instead of generic keyword search, SkillSync computes exact percentage matches, 
   - **Devpost** (Selenium) — Hackathons & student innovation challenges
   - **Wuzzuf.net** (BeautifulSoup) — Tech internships & junior roles across MENA
 - **Skill Extraction & Taxonomy**: Curated tech taxonomy (`scrapers/skills/taxonomy.json`) and keyword extractor (`scrapers/skills/extractor.py`) that normalizes technical skills from raw descriptions into standardized tags.
-- **Student Profile & Authentication**: Secure registration, login, and profile management with university, field of study, custom skill pills, suggestions, and domain interests.
+- **Enterprise Defensive Authentication & Security**:
+  - **Cryptographically Signed JWT Sessions**: HS256-signed Bearer tokens with strict UTC expiration and automatic frontend injection.
+  - **Salted Bcrypt Password Hashing**: 12 salt rounds with strict 72-byte boundary checks (DoS & truncation bypass prevention) and password complexity rules (length, letter, digit).
+  - **Broken Object Level Authorization (BOLA/IDOR) Defense**: Enforced student resource ownership across all profile and preference mutations with 403 Forbidden protection.
+  - **Email Verification Lifecycle**: 256-bit entropy verification tokens persisted exclusively as SHA-256 hashes with single-use consumption and expiration.
+  - **Password Reset & Session Revocation**: Expiring reset tokens with automatic revocation of all previously active JWT sessions upon password change.
+  - **Sliding-Window Rate Limiting**: Thread-safe in-memory rate limiting against brute-force attacks and credential stuffing (`429 Too Many Requests` with `Retry-After`).
+  - **Zero Secrets Exposure**: Pydantic response filtering ensuring password hashes, reset tokens, and secrets never escape to client responses.
+  - **Defensive HTTP Headers**: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Permissions-Policy`.
 - **Dynamic Recommendation Engine**:
   - Computes exact match percentages: $$\text{match\_score} = \text{round}\left(\frac{|\text{matched\_skills}|}{|\text{required\_skills}|} \times 100\right)$$
   - **Strong Matches ($\ge 70\%$)**: Highlights qualifying roles with verified skill badges.
   - **Near Misses ($40–69\%$)**: Flags high-potential roles within reach, highlighting the exact missing skills needed to qualify.
   - **Interactive Recompute Modal**: Triggerable on-demand from the Profile screen to re-evaluate opportunities in real time against updated skills.
+- **Active Opportunities & Dynamic Deadlines**: Real-time active status filtering and dynamic deadline calculation engine across all scrapers.
 - **Authentic Scraper-Driven Notifications**: Real-time sync logs and top match alerts derived 100% from actual scraper execution runs and database listings (zero mock/dummy placeholders).
 - **Modern Responsive Web UI**:
   - **Unified SVG Line Icon Design System**: Crisp Feather/Lucide monochrome vector icons across all sidebar navigation items and profile fields.
@@ -56,7 +65,8 @@ Instead of generic keyword search, SkillSync computes exact percentage matches, 
                                    │
                                    ▼
                         FastAPI REST API Service
-         (listings, students auth/profile, recommendations, notifications)
+             (Security Shield: JWT Bearer Auth, Rate Limiter,
+              BOLA Defense, Listings, Profile, Recommendations)
                                    │
                                    ▼
                      SkillSync Web Application
@@ -107,7 +117,11 @@ pip install -r requirements.txt
 
 # 4. Configure environment variables
 cp .env.example .env
-# Ensure MONGODB_URI=mongodb://localhost:27017
+# Set your MongoDB connection and security secrets in .env:
+# MONGO_URI=mongodb://localhost:27017
+# JWT_SECRET_KEY=your_secure_random_key_here
+# ACCESS_TOKEN_EXPIRE_MINUTES=120
+# RATE_LIMIT_LOGIN_MAX_ATTEMPTS=5
 
 # 5. Start the FastAPI backend server
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
@@ -135,15 +149,22 @@ python3 -m http.server 5500
 | `/health` | GET | API and MongoDB connectivity health check |
 | `/scrape/status` | GET | Summary of the most recent scraper runs |
 
-### Student Profile & Recommendations
-| Endpoint | Method | Description |
-|---|---|---|
-| `/students/register` | POST | Register a new student account |
-| `/students/login` | POST | Authenticate student and initiate session |
-| `/students/{id}` | GET | Retrieve student profile (university, skills, interests) |
-| `/students/{id}/profile` | PUT | Update student full profile and educational info |
-| `/students/{id}/skills` | PUT | Update student skills list |
-| `/students/{id}/recompute` | POST | Trigger recommendation engine pass; returns match scores, strong fits, and near-misses |
+### Student Authentication, Security & Profile
+| Endpoint | Method | Security / Auth | Description |
+|---|---|---|---|
+| `/students/register` | POST | Public | Register a student account with password complexity validation |
+| `/students/login` | POST | Rate-Limited | Authenticate credentials and receive expiring signed JWT Bearer token |
+| `/students/verify-email` | POST | Public | Verify student email with secure one-time token |
+| `/students/resend-verification` | POST | Rate-Limited | Request a fresh email verification link |
+| `/students/forgot-password` | POST | Rate-Limited | Request single-use password reset token |
+| `/students/reset-password` | POST | Public | Reset password with token; revokes all prior active sessions |
+| `/students/me` | GET | Bearer Token | Retrieve currently authenticated student profile |
+| `/students/current` | GET | Bearer Token | Authenticated session profile accessor (IDOR-safe) |
+| `/students/{id}` | GET | Bearer Token | View profile (full view for owner, sanitized/redacted for others) |
+| `/students/{id}/profile` | PUT | Bearer (Owner) | Update student full profile, university, and field of study |
+| `/students/{id}/skills` | PUT | Bearer (Owner) | Update student skill list |
+| `/students/{id}/preferences` | PUT | Bearer (Owner) | Update preferred domain & location |
+| `/students/{id}/recompute` | POST | Bearer (Owner) | Trigger recommendation engine pass; returns match scores and gap analysis |
 
 ### Notifications
 | Endpoint | Method | Description |
@@ -159,17 +180,17 @@ python3 -m http.server 5500
 ```
 SkillSync/
 ├── api/                          # FastAPI REST API service
-│   ├── auth.py                   # Password hashing & authentication helpers
-│   ├── config.py                 # Application configuration & env settings
+│   ├── auth.py                   # JWT access tokens, Bcrypt, rate limiters & IDOR security
+│   ├── config.py                 # Application configuration, JWT & rate limit env settings
 │   ├── database.py               # Asynchronous MongoDB client (Motor)
-│   ├── main.py                   # FastAPI application initialization & routes
-│   ├── models.py                 # Pydantic request & response schemas
+│   ├── main.py                   # FastAPI initialization, security headers & strict CORS
+│   ├── models.py                 # Pydantic schemas (sanitized response models)
 │   └── routes/
 │       ├── health.py             # /health & /scrape/status
-│       ├── listings.py           # /listings endpoints & filters
+│       ├── listings.py           # /listings endpoints, active filter & deadlines
 │       ├── notifications.py      # /notifications scraper activity endpoints
 │       ├── sources.py            # /sources scraper metrics
-│       └── students.py           # Student auth, profile & recommendation engine
+│       └── students.py           # Authentication, profile, verification & recommendation engine
 │
 ├── frontend/                     # Modern Web Application
 │   ├── css/
@@ -230,24 +251,33 @@ SkillSync/
 
 ## Running Tests
 
-All unit, integration, and API tests are automated using `pytest`:
+All unit, integration, API, and defensive security tests are automated using `pytest`:
 
 ```bash
 # Run the entire test suite
 pytest -v
 
 # Run specific test modules
-pytest tests/test_students.py -v       # Student auth & recommendation engine
-pytest tests/test_api.py -v            # API endpoints
+pytest tests/test_students.py -v       # Defensive security suite & profile tests
+pytest tests/test_api.py -v            # API endpoints & active filtering
 pytest tests/test_pipeline.py -v       # Pipeline & deduplication
 pytest tests/test_models.py -v         # Schema validation
-pytest tests/test_fingerprint.py -v    # Hashing
+pytest tests/test_fingerprint.py -v    # SHA-256 hashing
 ```
 
 **Current Test Status:**
 ```
-============================== 46 passed in 4.97s ==============================
+============================== 54 passed in 13.36s ==============================
 ```
+
+The defensive security suite in `tests/test_students.py` validates:
+- Bcrypt hashing & password complexity policies
+- Expiring JWT sessions & token tampering rejection
+- BOLA / IDOR protection across student accounts
+- Email verification token hashing and lifecycle
+- Password reset token single-use & instant session revocation
+- Sliding-window login rate limiting (`429 Too Many Requests`)
+- Response sanitization (no internal hashes or secrets exposed)
 
 ---
 
@@ -256,8 +286,9 @@ pytest tests/test_fingerprint.py -v    # Hashing
 | Layer | Technologies | Purpose |
 |---|---|---|
 | **Backend & API** | Python 3.11, FastAPI, Pydantic, Motor | High-performance asynchronous REST API |
+| **Authentication & Security** | PyJWT, Bcrypt, SlidingWindowRateLimiter | Signed JWTs, work-factor salting, BOLA defense, rate limiting |
 | **Database** | MongoDB | Document store for flexible multi-source listings & students |
-| **Data Acquisition** | BeautifulSoup4, Selenium, Requests, Scrapy | Multi-platform scraping (static HTML, JS-rendered, JSON API) |
+| **Data Acquisition** | BeautifulSoup4, Selenium, Requests | Multi-platform scraping (static HTML, JS-rendered, JSON API) |
 | **NLP & Skills** | Custom Taxonomy Engine (`taxonomy.json`), Regex | Tech skill normalization & extraction from raw descriptions |
 | **Matching Engine** | Content-based similarity & Jaccard skill-fit | Real-time match scoring, near-miss categorization, gap analysis |
 | **Frontend Web App** | HTML5, Vanilla CSS3, Modern ES6+ JavaScript | Fast, accessible, framework-free UI with responsive design |
