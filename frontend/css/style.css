@@ -72,7 +72,7 @@
   --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
 
   /* Spacing */
-  --sidebar-width: 220px;
+  --sidebar-width: 240px;
   --header-height: 64px;
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -383,19 +383,38 @@ img {
 }
 
 .sidebar-logo {
-  padding: 20px 24px;
-  font-size: var(--font-lg);
-  font-weight: 700;
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-light);
+  padding: 20px 20px 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+  border-bottom: none;
+  text-decoration: none;
 }
 
-.sidebar-logo span {
+.sidebar-logo .logo-icon-badge,
+.sidebar-logo .logo-icon-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+  display: block;
+}
+
+.sidebar-logo .logo-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.sidebar-logo .logo-title span {
   color: var(--primary);
 }
 
 .sidebar-nav {
-  padding: 16px 12px;
+  padding: 12px;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -413,6 +432,7 @@ img {
 }
 
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -422,34 +442,82 @@ img {
   font-size: var(--font-base);
   font-weight: 500;
   transition: all var(--transition);
+  text-decoration: none;
+  overflow: hidden;
   margin-bottom: 2px;
 }
 
-.nav-item:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
+[data-theme="dark"] .nav-item {
+  color: var(--text-muted);
 }
 
+/* Hover effect as shown in profile: soft teal background, teal text and icon */
+.nav-item:hover {
+  background: #E6F7F5;
+  color: var(--primary);
+}
+
+.nav-item:hover .nav-icon svg {
+  stroke: var(--primary);
+}
+
+[data-theme="dark"] .nav-item:hover {
+  background: rgba(13, 148, 136, 0.16);
+  color: #2DD4BF;
+}
+
+[data-theme="dark"] .nav-item:hover .nav-icon svg {
+  stroke: #2DD4BF;
+}
+
+/* Active item: unified mint pill matching Dashboard and rest of screens (Image 2) */
 .nav-item.active {
-  background: var(--accent-light);
+  background: var(--accent-light, #D1FAE5);
   color: var(--primary);
   font-weight: 600;
+  border-radius: var(--radius-md);
+}
+
+[data-theme="dark"] .nav-item.active {
+  background: rgba(13, 148, 136, 0.22);
+  color: #2DD4BF;
+}
+
+.nav-item.active .nav-icon svg {
+  stroke: var(--primary);
+}
+
+[data-theme="dark"] .nav-item.active .nav-icon svg {
+  stroke: #2DD4BF;
 }
 
 .nav-item .nav-icon {
-  font-size: 1.1rem;
-  width: 20px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.nav-item .nav-icon svg {
+  stroke: var(--text-secondary);
+  transition: stroke var(--transition);
+}
+
+[data-theme="dark"] .nav-item .nav-icon svg {
+  stroke: var(--text-muted);
 }
 
 .nav-item .nav-badge {
   margin-left: auto;
-  width: 22px;
-  height: 22px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   border-radius: var(--radius-full);
   background: var(--primary);
-  color: white;
-  font-size: 0.7rem;
+  color: #ffffff;
+  font-size: 0.72rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -457,14 +525,17 @@ img {
 }
 
 .sidebar-footer {
-  padding: 16px;
-  border-top: 1px solid var(--border-light);
+  padding: 16px 12px;
+  border-top: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .sidebar-footer-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 8px 14px;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
@@ -478,17 +549,52 @@ img {
   text-align: left;
 }
 
+[data-theme="dark"] .sidebar-footer-item {
+  color: var(--text-muted);
+}
+
 .sidebar-footer-item:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
+  background: #E6F7F5;
+  color: var(--primary);
+}
+
+.sidebar-footer-item:hover svg {
+  stroke: var(--primary);
+}
+
+[data-theme="dark"] .sidebar-footer-item:hover {
+  background: rgba(13, 148, 136, 0.16);
+  color: #2DD4BF;
+}
+
+[data-theme="dark"] .sidebar-footer-item:hover svg {
+  stroke: #2DD4BF;
+}
+
+.sidebar-footer-item svg {
+  stroke: var(--text-secondary);
+  transition: stroke var(--transition);
+}
+
+[data-theme="dark"] .sidebar-footer-item svg {
+  stroke: var(--text-muted);
 }
 
 .sidebar-user {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 8px 14px;
   margin-top: 8px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  transition: all var(--transition);
+}
+
+[data-theme="dark"] .sidebar-user {
+  background: transparent;
+  border: none;
 }
 
 .sidebar-user .user-avatar {
@@ -496,7 +602,7 @@ img {
   height: 36px;
   border-radius: var(--radius-full);
   background: var(--primary);
-  color: white;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -521,29 +627,13 @@ img {
   text-overflow: ellipsis;
 }
 
-.sidebar-user .user-email,
-.sidebar-user .user-signout {
+.sidebar-user .user-email {
   font-size: var(--font-xs);
   color: var(--text-muted);
-}
-
-.sidebar-user .user-signout {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  transition: color var(--transition);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.sidebar-user .user-signout:hover {
-  color: #DC2626;
-  text-decoration: underline;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
 }
 
 /* ============================================

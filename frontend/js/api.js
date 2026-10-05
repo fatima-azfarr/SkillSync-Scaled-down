@@ -292,6 +292,27 @@ async function recomputeRecommendations(studentId) {
     return await response.json();
 }
 
+/**
+ * Request password reset instructions for a student email.
+ *
+ * @param {string} email
+ * @returns {Object} Message response
+ */
+async function requestPasswordReset(email) {
+    const response = await safeFetch(`${API_BASE}/students/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.detail || `Password reset request failed (${response.status})`);
+    }
+
+    return await response.json();
+}
+
 // ─── Global Sidebar User & Sign Out Handling ──────────────────────────────
 document.addEventListener("DOMContentLoaded", async function () {
     const urlParams = new URLSearchParams(window.location.search);
@@ -338,21 +359,25 @@ document.addEventListener("DOMContentLoaded", async function () {
             });
         }
     } else {
-        let studentName = localStorage.getItem("skillsync-student-name");
-        let studentEmail = localStorage.getItem("skillsync-student-email");
+        let studentName = localStorage.getItem("skillsync-student-name") || "Asel";
+        let studentField = localStorage.getItem("skillsync-student-field") || "Computer Science";
 
-        if (studentName && nameEl) {
-            nameEl.textContent = studentName.split(" ")[0] || studentName;
-            if (avatarEl) {
-                const initials = studentName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
-                avatarEl.textContent = initials || "S";
-            }
+        if (nameEl) {
+            nameEl.textContent = studentName.split(" ")[0] || "Asel";
         }
-        if (studentEmail && emailEl) {
-            emailEl.textContent = studentEmail;
+        if (avatarEl) {
+            const initials = studentName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+            avatarEl.textContent = initials || "AN";
+        }
+        if (emailEl) {
+            emailEl.textContent = studentField;
         }
 
         if (logoutBtn) {
+            logoutBtn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Sign out</span>
+            `;
             logoutBtn.addEventListener("click", function (e) {
                 e.preventDefault();
                 localStorage.setItem("skillsync_guest", "true");
@@ -377,8 +402,27 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
     }
 
+    // Ensure Option A logo is always present in sidebar even if DOM was loaded from a stale cache
+    const sidebarLogo = document.querySelector(".sidebar-logo");
+    if (sidebarLogo && !sidebarLogo.querySelector(".logo-icon-img")) {
+        const logoImg = document.createElement("img");
+        logoImg.src = "assets/logo.svg";
+        logoImg.alt = "SkillSync logo";
+        logoImg.className = "logo-icon-img";
+        logoImg.width = 36;
+        logoImg.height = 36;
+        sidebarLogo.insertBefore(logoImg, sidebarLogo.firstChild);
+    }
+
     // Global Notification Badges & Header Bell Navigation
     updateGlobalNotificationBadges();
+});
+
+// Auto-reload if page is restored from browser back-forward cache (bfcache)
+window.addEventListener("pageshow", function (event) {
+    if (event.persisted) {
+        window.location.reload();
+    }
 });
 
 /**

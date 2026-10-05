@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 36" fill="none" width="160" height="36">
+  <defs>
+    <linearGradient id="ss-badge-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0D9488"/>
+      <stop offset="100%" stop-color="#0F766E"/>
+    </linearGradient>
+    <linearGradient id="ss-mint" x1="8" y1="8" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5EEAD4"/>
+      <stop offset="100%" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 36x36 Squircle Icon -->
+  <rect width="36" height="36" rx="9" fill="url(#ss-badge-grad)"/>
+  
+  <!-- Interlocking S & Sync Loop -->
+  <path d="M21 11H14C12 11 10.5 12.5 10.5 14.5C10.5 16.5 12 18 14 18H22C24 18 25.5 19.5 25.5 21.5C25.5 23.5 24 25 22 25H14" 
+        stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M19 8.5L21.5 11L19 13.5" 
+        stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="18" cy="18" r="1.7" fill="#5EEAD4"/>
+
+  <!-- Brand Typography -->
+  <text x="48" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="20" font-weight="800" fill="#0F172A" letter-spacing="-0.03em">Skill<tspan fill="#0D9488">Sync</tspan></text>
+</svg>

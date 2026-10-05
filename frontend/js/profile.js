@@ -103,9 +103,24 @@ function showToast(message, type = "success") {
     }, 4000);
 }
 
-function showAuthMessage(text, type = "error") {
-    const container = document.getElementById("auth-message");
+function showAuthMessage(text, type = "error", targetContainerId = null) {
+    let container = null;
+    if (targetContainerId) {
+        container = document.getElementById(targetContainerId);
+    }
+    if (!container) {
+        const regBox = document.getElementById("auth-box-register");
+        const forgotBox = document.getElementById("auth-box-forgot");
+        if (regBox && regBox.style.display !== "none") {
+            container = document.getElementById("register-message");
+        } else if (forgotBox && forgotBox.style.display !== "none") {
+            container = document.getElementById("forgot-message");
+        } else {
+            container = document.getElementById("auth-message");
+        }
+    }
     if (!container) return;
+
     const cssClass = type === "error" ? "form-error" : "form-success";
     const icon = type === "error"
         ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
@@ -113,29 +128,38 @@ function showAuthMessage(text, type = "error") {
     container.innerHTML = `<div class="${cssClass}">${icon}<span>${escapeHtml(text)}</span></div>`;
 }
 
-// ─── Tab Switching (Login / Register) ──────────────────────────────
+// ─── Auth View Switching (Login / Register / Forgot Password) ──────────────────────────────
 
-function switchTab(tab) {
-    const loginForm = document.getElementById("login-form");
-    const registerForm = document.getElementById("register-form");
-    const loginTab = document.getElementById("tab-login");
-    const registerTab = document.getElementById("tab-register");
-    const msg = document.getElementById("auth-message");
-    if (msg) msg.innerHTML = "";
-    document.querySelectorAll(".form-input.is-invalid").forEach(el => el.classList.remove("is-invalid"));
+function switchAuthView(view) {
+    const loginBox = document.getElementById("auth-box-login");
+    const registerBox = document.getElementById("auth-box-register");
+    const forgotBox = document.getElementById("auth-box-forgot");
+    const authMsg = document.getElementById("auth-message");
+    const regMsg = document.getElementById("register-message");
+    const forgotMsg = document.getElementById("forgot-message");
+    if (authMsg) authMsg.innerHTML = "";
+    if (regMsg) regMsg.innerHTML = "";
+    if (forgotMsg) forgotMsg.innerHTML = "";
+    document.querySelectorAll(".auth-input-styled.is-invalid, .form-input.is-invalid").forEach(el => el.classList.remove("is-invalid"));
     resetPasswordToggles();
 
-    if (tab === "login") {
-        loginForm.style.display = "block";
-        registerForm.style.display = "none";
-        loginTab.classList.add("active");
-        registerTab.classList.remove("active");
+    if (view === "register") {
+        if (loginBox) loginBox.style.display = "none";
+        if (registerBox) registerBox.style.display = "block";
+        if (forgotBox) forgotBox.style.display = "none";
+    } else if (view === "forgot") {
+        if (loginBox) loginBox.style.display = "none";
+        if (registerBox) registerBox.style.display = "none";
+        if (forgotBox) forgotBox.style.display = "block";
     } else {
-        loginForm.style.display = "none";
-        registerForm.style.display = "block";
-        loginTab.classList.remove("active");
-        registerTab.classList.add("active");
+        if (loginBox) loginBox.style.display = "block";
+        if (registerBox) registerBox.style.display = "none";
+        if (forgotBox) forgotBox.style.display = "none";
     }
+}
+
+function switchTab(tab) {
+    switchAuthView(tab);
 }
 
 // ─── Views Switching ──────────────────────────────
@@ -150,9 +174,10 @@ function showAuthView() {
     const profileView = document.getElementById("profile-view");
     const sidebar = document.getElementById("app-sidebar") || document.querySelector(".sidebar");
 
-    if (authView) authView.style.display = "block";
+    if (authView) authView.style.display = "flex";
     if (profileView) profileView.style.display = "none";
     if (sidebar) sidebar.style.display = "none";
+    switchAuthView("login");
 }
 
 function showProfileView(student) {
@@ -172,14 +197,14 @@ function showProfileView(student) {
     if (!student) return;
 
     // User details in Card 1
-    const name = student.name || localStorage.getItem(STUDENT_NAME_KEY) || "Fatima";
-    const email = student.email || localStorage.getItem("skillsync-student-email") || "fa23-bcs-185@cuilahore.edu.pk";
+    const name = student.name || localStorage.getItem(STUDENT_NAME_KEY) || "Asel";
+    const email = student.email || localStorage.getItem("skillsync-student-email") || "asel@nust.edu.pk";
     const initials = name
         .split(" ")
         .map((w) => w[0])
         .join("")
         .toUpperCase()
-        .slice(0, 2) || "F";
+        .slice(0, 2) || "AN";
 
     const nameEl = document.getElementById("profile-card-name");
     const emailEl = document.getElementById("profile-card-email");
@@ -192,9 +217,19 @@ function showProfileView(student) {
     const sidebarName = document.getElementById("sidebar-user-name");
     const sidebarAvatar = document.getElementById("sidebar-user-avatar");
     const sidebarEmail = document.getElementById("sidebar-user-email");
-    if (sidebarName) sidebarName.textContent = name.split(" ")[0];
-    if (sidebarAvatar) sidebarAvatar.textContent = initials;
-    if (sidebarEmail) sidebarEmail.textContent = email;
+    const sidebarLogoutBtn = document.getElementById("sidebar-logout-btn");
+    if (sidebarName) sidebarName.textContent = name.split(" ")[0] || "Asel";
+    if (sidebarAvatar) sidebarAvatar.textContent = initials || "AN";
+    if (sidebarEmail) sidebarEmail.textContent = student.field_of_study || localStorage.getItem("skillsync-student-field") || "Computer Science";
+    if (sidebarLogoutBtn) {
+        sidebarLogoutBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Sign out</span>
+        `;
+    }
+    if (typeof updateGlobalNotificationBadges === "function") {
+        updateGlobalNotificationBadges();
+    }
 
     // Education inputs
     const uniInput = document.getElementById("profile-university");
@@ -203,7 +238,7 @@ function showProfileView(student) {
         uniInput.value =
             student.university ||
             localStorage.getItem("skillsync-student-university") ||
-            "COMSATS University Islamabad, Lahore Campus";
+            "NUST — National University of Sciences and Technology";
     }
     if (fieldInput) {
         fieldInput.value =
@@ -607,8 +642,8 @@ async function loadCurrentStudent() {
     }
 
     // Instant cache hydration: immediately populate DOM to guarantee 0ms latency and 0 visual glitches
-    const cachedName = localStorage.getItem(STUDENT_NAME_KEY) || "Fatima";
-    const cachedEmail = localStorage.getItem("skillsync-student-email") || "fa23-bcs-185@cuilahore.edu.pk";
+    const cachedName = localStorage.getItem(STUDENT_NAME_KEY) || "Asel";
+    const cachedEmail = localStorage.getItem("skillsync-student-email") || "asel@nust.edu.pk";
     const cachedUni = localStorage.getItem("skillsync-student-university");
     const cachedField = localStorage.getItem("skillsync-student-field");
     let cachedSkills = null;
@@ -831,6 +866,77 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // Auth View Switching Links
+    document.getElementById("link-forgot-password")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        switchAuthView("forgot");
+    });
+
+    document.getElementById("link-goto-register")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        switchAuthView("register");
+    });
+
+    document.getElementById("link-goto-login")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        switchAuthView("login");
+    });
+
+    document.getElementById("link-forgot-to-login")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        switchAuthView("login");
+    });
+
+    // Forgot Password Form Submit
+    document.getElementById("forgot-form")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const emailInput = document.getElementById("forgot-email");
+        const email = emailInput?.value.trim().toLowerCase() || "";
+        const forgotMsg = document.getElementById("forgot-message");
+        if (forgotMsg) forgotMsg.innerHTML = "";
+
+        if (!email) {
+            emailInput?.classList.add("is-invalid");
+            showAuthMessage("Email is required to reset your password.", "error", "forgot-message");
+            emailInput?.focus();
+            return;
+        }
+
+        const submitBtn = document.getElementById("forgot-submit");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Sending reset link...";
+
+        try {
+            const res = await requestPasswordReset(email);
+            showAuthMessage(res.message || "If this account exists, password reset instructions have been sent.", "success", "forgot-message");
+        } catch (err) {
+            showAuthMessage(err.message, "error", "forgot-message");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Send Reset Link";
+        }
+    });
+
+    document.getElementById("forgot-email")?.addEventListener("input", (e) => {
+        e.target.classList.remove("is-invalid");
+    });
+
+    // Auth Floating Help Button
+    const authHelpFab = document.getElementById("auth-help-fab");
+    const authHelpPopup = document.getElementById("auth-help-popup");
+    authHelpFab?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        authHelpPopup?.classList.toggle("open");
+    });
+
+    document.addEventListener("click", (e) => {
+        if (authHelpPopup && authHelpPopup.classList.contains("open")) {
+            if (!authHelpPopup.contains(e.target) && e.target !== authHelpFab) {
+                authHelpPopup.classList.remove("open");
+            }
+        }
+    });
+
     // Sidebar sign out button
     document.getElementById("sidebar-logout-btn")?.addEventListener("click", (e) => {
         e.preventDefault();
@@ -900,10 +1006,10 @@ function resetPasswordToggles() {
         const isGuest = urlParams.get("guest") === "true" || localStorage.getItem("skillsync_guest") === "true";
         const studentId = localStorage.getItem(STUDENT_KEY);
         if (studentId && !isGuest) {
-            const cachedName = localStorage.getItem(STUDENT_NAME_KEY) || "Fatima";
-            const cachedEmail = localStorage.getItem("skillsync-student-email") || "fa23-bcs-185@cuilahore.edu.pk";
-            const cachedUni = localStorage.getItem("skillsync-student-university");
-            const cachedField = localStorage.getItem("skillsync-student-field");
+            const cachedName = localStorage.getItem(STUDENT_NAME_KEY) || "Asel";
+            const cachedEmail = localStorage.getItem("skillsync-student-email") || "asel@nust.edu.pk";
+            const cachedUni = localStorage.getItem("skillsync-student-university") || "NUST — National University of Sciences and Technology";
+            const cachedField = localStorage.getItem("skillsync-student-field") || "Computer Science";
             let cachedSkills = null;
             let cachedDomains = null;
             try {

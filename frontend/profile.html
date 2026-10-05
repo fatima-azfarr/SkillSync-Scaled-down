@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="description" content="SkillSync — Profile & skills management.">
     <title>SkillSync — Profile & skills</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/style.css?v=20261005a">
+    <link rel="stylesheet" href="css/profile.css?v=20261005a">
 
     <!-- Theme (load early to prevent flash) -->
-    <script src="js/theme.js"></script>
+    <script src="js/theme.js?v=20261005a"></script>
     <script>
         // Check session early to avoid any glitch or layout shift
         (function() {
@@ -40,7 +44,8 @@
         <!-- ═══════════ SIDEBAR ═══════════ -->
         <aside class="sidebar" id="app-sidebar">
             <div class="sidebar-logo">
-                Skill<span>Sync</span>
+                <img src="assets/logo.svg" alt="SkillSync logo" class="logo-icon-img" width="36" height="36">
+                <span class="logo-title">Skill<span>Sync</span></span>
             </div>
 
             <nav class="sidebar-nav">
@@ -62,7 +67,7 @@
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         </span>
                         Notifications
-                        <span class="nav-badge">2</span>
+                        <span class="nav-badge" id="sidebar-notif-badge">2</span>
                     </a>
                     <a href="profile.html" class="nav-item active">
                         <span class="nav-icon">
@@ -79,87 +84,118 @@
                     <span>Dark mode</span>
                 </button>
 
-                <button class="sidebar-footer-item" id="sidebar-logout-btn" style="color:var(--text-secondary);">
+                <button class="sidebar-footer-item" id="sidebar-logout-btn">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                     <span>Sign out</span>
                 </button>
 
                 <div class="sidebar-user" id="sidebar-user-badge">
-                    <div class="user-avatar" id="sidebar-user-avatar">F</div>
+                    <div class="user-avatar" id="sidebar-user-avatar">AN</div>
                     <div class="user-info">
-                        <div class="user-name" id="sidebar-user-name">Fatima</div>
-                        <div class="user-email" id="sidebar-user-email">fa23-bcs-185@cuilahore.edu.pk</div>
+                        <div class="user-name" id="sidebar-user-name">Asel</div>
+                        <div class="user-email" id="sidebar-user-email">Computer Science</div>
                     </div>
                 </div>
             </div>
         </aside>
 
-        <!-- ═══════════ MAIN CONTENT ═══════════ -->
-        <div class="main-content">
-            <div class="page-content" style="padding-top: 28px;">
-
-                <!-- ═══ LOGGED-OUT VIEW: login/register tabs ═══ -->
-                <div id="auth-view" class="auth-container" style="display: none;">
-                    <div class="auth-header-card">
-                        <div class="auth-brand-row">
-                            <div class="auth-logo">Skill<span>Sync</span></div>
-                            <button class="auth-theme-toggle-btn" id="auth-theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
-                                <svg class="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                            </button>
-                        </div>
-                        <p class="auth-tagline">AI-Driven Internship &amp; Tech Event Discovery</p>
+        <!-- ═══════════ SPLIT-SCREEN AUTH VIEW (Image 1) ═══════════ -->
+        <div id="auth-view" class="auth-split-wrapper">
+            <!-- Left Hero Pane -->
+            <div class="auth-hero-pane">
+                <div class="auth-hero-header">
+                    <div class="auth-hero-logo">
+                        <img src="assets/logo.svg" alt="SkillSync logo" class="auth-logo-img" width="36" height="36">
+                        <span class="auth-logo-text">SkillSync</span>
                     </div>
+                </div>
 
-                    <div class="auth-tabs">
-                        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Log In</button>
-                        <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+                <div class="auth-hero-content">
+                    <h1 class="auth-hero-headline">Find opportunities that actually fit your skills.</h1>
+                    <p class="auth-hero-subhead">AI-powered matching across internships, hackathons, and tech events — personalised to where you are right now.</p>
+
+                    <div class="auth-hero-pills">
+                        <span class="hero-pill">92% match</span>
+                        <span class="hero-pill">Near-miss alerts</span>
+                        <span class="hero-pill">Skill gap view</span>
                     </div>
+                </div>
+
+                <div class="auth-hero-footer">
+                    <span>© 2026 SkillSync</span>
+                </div>
+            </div>
+
+            <!-- Right Form Pane -->
+            <div class="auth-form-pane">
+                <!-- Login Box -->
+                <div class="auth-card-inner" id="auth-box-login">
+                    <h2 class="auth-form-title">Welcome back</h2>
+                    <p class="auth-form-subtitle">Sign in to your account to continue.</p>
 
                     <div id="auth-message"></div>
 
-                    <!-- Login form -->
-                    <form class="auth-form" id="login-form">
-                        <div class="form-group">
-                            <label for="login-email">Email</label>
-                            <input type="email" id="login-email" class="form-input" required
-                                   placeholder="fa23-bcs-185@cuilahore.edu.pk">
+                    <form id="login-form" novalidate>
+                        <div class="auth-field-group">
+                            <label class="auth-label" for="login-email">EMAIL</label>
+                            <input type="email" id="login-email" class="auth-input-styled" required
+                                   placeholder="asel@nust.edu.pk" value="asel@nust.edu.pk" autocomplete="email">
                         </div>
-                        <div class="form-group">
-                            <label for="login-password">Password</label>
+                        <div class="auth-field-group">
+                            <div class="auth-label-row">
+                                <label class="auth-label" for="login-password">PASSWORD</label>
+                                <a href="#" class="auth-forgot-link" id="link-forgot-password">Forgot?</a>
+                            </div>
                             <div class="password-input-wrapper">
-                                <input type="password" id="login-password" class="form-input" required
+                                <input type="password" id="login-password" class="auth-input-styled" required
                                        placeholder="••••••••" autocomplete="current-password">
                                 <button type="button" class="btn-toggle-password" data-target="login-password" aria-label="Show password" title="Show password">
                                     <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                 </button>
                             </div>
                         </div>
-                        <button type="submit" class="btn-primary" id="login-submit">Log In</button>
+                        <button type="submit" class="auth-submit-btn" id="login-submit">Sign in</button>
                     </form>
 
-                    <!-- Register form -->
-                    <form class="auth-form" id="register-form" style="display: none;" novalidate>
-                        <div class="form-row-2col">
-                            <div class="form-group">
-                                <label for="register-firstname">First Name <span class="required-star" aria-hidden="true">*</span></label>
-                                <input type="text" id="register-firstname" class="form-input" required aria-required="true"
-                                       placeholder="Fatima" autocomplete="given-name">
+                    <div class="auth-toggle-row">
+                        <span>Don't have an account?</span>
+                        <a href="#" class="auth-toggle-link" id="link-goto-register">Sign up</a>
+                    </div>
+
+                    <div class="auth-guest-row">
+                        <a href="index.html?guest=true" class="auth-guest-link" id="auth-guest-link">Explore opportunities as guest →</a>
+                    </div>
+                </div>
+
+                <!-- Register Box -->
+                <div class="auth-card-inner" id="auth-box-register" style="display: none;">
+                    <h2 class="auth-form-title">Create account</h2>
+                    <p class="auth-form-subtitle">Discover opportunities tailored to your skills.</p>
+
+                    <div id="register-message"></div>
+
+                    <form id="register-form" novalidate>
+                        <div class="auth-name-row">
+                            <div class="auth-field-group">
+                                <label class="auth-label" for="register-firstname">FIRST NAME <span class="required-star" aria-hidden="true">*</span></label>
+                                <input type="text" id="register-firstname" class="auth-input-styled" required
+                                       placeholder="Asel" autocomplete="given-name">
                             </div>
-                            <div class="form-group">
-                                <label for="register-lastname">Last Name <span class="required-star" aria-hidden="true">*</span></label>
-                                <input type="text" id="register-lastname" class="form-input" required aria-required="true"
-                                       placeholder="Azfar" autocomplete="family-name">
+                            <div class="auth-field-group">
+                                <label class="auth-label" for="register-lastname">LAST NAME <span class="required-star" aria-hidden="true">*</span></label>
+                                <input type="text" id="register-lastname" class="auth-input-styled" required
+                                       placeholder="Nurlanovna" autocomplete="family-name">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="register-email">Email <span class="required-star" aria-hidden="true">*</span></label>
-                            <input type="email" id="register-email" class="form-input" required aria-required="true"
-                                   placeholder="fa23-bcs-185@cuilahore.edu.pk" autocomplete="email">
+                        <div class="auth-field-group">
+                            <label class="auth-label" for="register-email">EMAIL <span class="required-star" aria-hidden="true">*</span></label>
+                            <input type="email" id="register-email" class="auth-input-styled" required
+                                   placeholder="asel@nust.edu.pk" autocomplete="email">
                         </div>
-                        <div class="form-group">
-                            <label for="register-password">Password <span class="required-star" aria-hidden="true">*</span></label>
+                        <div class="auth-field-group">
+                            <label class="auth-label" for="register-password">PASSWORD <span class="required-star" aria-hidden="true">*</span></label>
                             <div class="password-input-wrapper">
-                                <input type="password" id="register-password" class="form-input" required aria-required="true"
+                                <input type="password" id="register-password" class="auth-input-styled" required
                                        placeholder="At least 8 characters" autocomplete="new-password">
                                 <button type="button" class="btn-toggle-password" data-target="register-password" aria-label="Show password" title="Show password">
                                     <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -167,23 +203,59 @@
                             </div>
                             <div class="form-hint">Minimum 8 characters.</div>
                         </div>
-                        <div class="form-group">
-                            <label for="register-confirm-password">Re-enter Password <span class="required-star" aria-hidden="true">*</span></label>
+                        <div class="auth-field-group">
+                            <label class="auth-label" for="register-confirm-password">CONFIRM PASSWORD <span class="required-star" aria-hidden="true">*</span></label>
                             <div class="password-input-wrapper">
-                                <input type="password" id="register-confirm-password" class="form-input" required aria-required="true"
+                                <input type="password" id="register-confirm-password" class="auth-input-styled" required
                                        placeholder="Re-enter your password" autocomplete="new-password">
                                 <button type="button" class="btn-toggle-password" data-target="register-confirm-password" aria-label="Show password" title="Show password">
                                     <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                 </button>
                             </div>
                         </div>
-                        <button type="submit" class="btn-primary" id="register-submit">Create Account</button>
+                        <button type="submit" class="auth-submit-btn" id="register-submit">Create account</button>
                     </form>
 
-                    <div class="auth-footer-links">
-                        <a href="index.html?guest=true" class="auth-guest-link" id="auth-guest-link">Explore opportunities as guest →</a>
+                    <div class="auth-toggle-row">
+                        <span>Already have an account?</span>
+                        <a href="#" class="auth-toggle-link" id="link-goto-login">Sign in</a>
                     </div>
                 </div>
+
+                <!-- Forgot Password Box -->
+                <div class="auth-card-inner" id="auth-box-forgot" style="display: none;">
+                    <h2 class="auth-form-title">Reset password</h2>
+                    <p class="auth-form-subtitle">Enter your email and we'll send a reset link.</p>
+
+                    <div id="forgot-message"></div>
+
+                    <form id="forgot-form" novalidate>
+                        <div class="auth-field-group">
+                            <label class="auth-label" for="forgot-email">EMAIL</label>
+                            <input type="email" id="forgot-email" class="auth-input-styled" required
+                                   placeholder="asel@nust.edu.pk" value="asel@nust.edu.pk" autocomplete="email">
+                        </div>
+                        <button type="submit" class="auth-submit-btn" id="forgot-submit">Send Reset Link</button>
+                    </form>
+
+                    <div class="auth-toggle-row">
+                        <span>Remember your password?</span>
+                        <a href="#" class="auth-toggle-link" id="link-forgot-to-login">Sign in</a>
+                    </div>
+                </div>
+
+                <!-- Floating Help FAB (Image 1 bottom-right) -->
+                <button class="auth-help-fab" id="auth-help-fab" title="Help &amp; FAQ" aria-label="Help">?</button>
+                <div class="auth-help-popup" id="auth-help-popup">
+                    <h4>💡 Welcome to SkillSync</h4>
+                    <p>SkillSync matches students with tech opportunities based on skills &amp; domain interests. Sign in or explore as guest!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ MAIN CONTENT (Profile & Skills) ═══════════ -->
+        <div class="main-content" id="app-main-content">
+            <div class="page-content" style="padding-top: 28px;">
 
                 <!-- ═══ LOGGED-IN VIEW: Profile & Skills ═══ -->
                 <div class="profile-container" id="profile-view">
@@ -203,10 +275,10 @@
                     <!-- Card 1: User Profile & Education -->
                     <div class="profile-section-card">
                         <div class="profile-user-top">
-                            <div class="profile-user-avatar-large" id="profile-card-avatar">F</div>
+                            <div class="profile-user-avatar-large" id="profile-card-avatar">AN</div>
                             <div class="profile-user-meta">
-                                <h2 id="profile-card-name">Fatima</h2>
-                                <p id="profile-card-email">fa23-bcs-185@cuilahore.edu.pk</p>
+                                <h2 id="profile-card-name">Asel</h2>
+                                <p id="profile-card-email">asel@nust.edu.pk</p>
                             </div>
                         </div>
 
@@ -358,7 +430,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/api.js"></script>
-    <script src="js/profile.js"></script>
+    <script src="js/api.js?v=20261005a"></script>
+    <script src="js/profile.js?v=20261005a"></script>
 </body>
 </html>
